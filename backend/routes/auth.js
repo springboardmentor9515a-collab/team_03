@@ -48,7 +48,7 @@ router.post('/register', [
   const user = await User.create({
     name,
     email,
-    password, // This will be automatically hashed by the pre-save hook
+    password, 
     role,
     location,
     coordinates: (latitude && longitude) ? { latitude, longitude } : undefined,
@@ -150,7 +150,7 @@ router.put('/profile', auth, [
   }
 
   const user = await User.findByIdAndUpdate(
-    req.user.id, // Changed from req.user._id to req.user.id
+    req.user.id, 
     updateData,
     { new: true, runValidators: true }
   );
