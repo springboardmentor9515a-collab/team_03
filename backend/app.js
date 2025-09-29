@@ -8,17 +8,13 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
-// Connect to database
 connectDB();
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Authentication routes
 app.use('/api/auth', authRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -28,7 +24,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// bcrypt test endpoint
 app.get('/api/test-bcrypt', async (req, res) => {
   try {
     const password = 'testpassword123';
@@ -45,13 +40,11 @@ app.get('/api/test-bcrypt', async (req, res) => {
   }
 });
 
-// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Authentication server error' });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });

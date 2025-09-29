@@ -7,7 +7,6 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Generate JWT Token
 const generateToken = (user) => {
   return jwt.sign(
     { 
@@ -20,9 +19,8 @@ const generateToken = (user) => {
   );
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
+// Register user
+// POST /api/auth/register
 router.post('/register', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Please provide a valid email'),
@@ -39,7 +37,6 @@ router.post('/register', [
 
   const { name, email, password, role = 'citizen', location, latitude, longitude } = req.body;
 
-  // Check if user exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return res.status(400).json({ 
@@ -48,7 +45,6 @@ router.post('/register', [
     });
   }
 
-  // Create user
   const user = await User.create({
     name,
     email,
@@ -69,9 +65,8 @@ router.post('/register', [
   });
 }));
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+// Login user
+// POST /api/auth/login
 router.post('/login', [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').exists().withMessage('Password is required')
@@ -86,7 +81,7 @@ router.post('/login', [
 
   const { email, password } = req.body;
 
-  // Find user and include password using select('+password')
+
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
     return res.status(401).json({ 
@@ -95,7 +90,6 @@ router.post('/login', [
     });
   }
 
-  // Check password using the matchPassword method
   const isValidPassword = await user.matchPassword(password);
   if (!isValidPassword) {
     return res.status(401).json({ 
@@ -114,9 +108,8 @@ router.post('/login', [
   });
 }));
 
-// @desc    Get user profile
-// @route   GET /api/auth/profile
-// @access  Private
+//Get user profile
+//GET /api/auth/profile
 router.get('/profile', auth, asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id); // Changed from req.user._id to req.user.id
   if (!user) {
@@ -132,9 +125,8 @@ router.get('/profile', auth, asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+// Update user profile
+// PUT /api/auth/profile
 router.put('/profile', auth, [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('location').optional().trim().isLength({ max: 100 }).withMessage('Location cannot exceed 100 characters')
@@ -177,7 +169,6 @@ router.put('/profile', auth, [
   });
 }));
 
-// Test route
 router.get('/test', (req, res) => {
   res.json({ 
     success: true,

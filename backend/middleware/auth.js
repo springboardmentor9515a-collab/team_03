@@ -5,15 +5,10 @@ const User = require('../SchemaModels/user');
 const auth = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Check for token in Authorization header
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  // Also check for token in x-auth-token header 
-  if (!token && req.headers['x-auth-token']) {
-    token = req.headers['x-auth-token'];
-  }
 
   if (!token) {
     return res.status(401).json({ 
@@ -23,10 +18,8 @@ const auth = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // Verify token with fallback secret
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
     
-    // Find user without password
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
@@ -36,10 +29,6 @@ const auth = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // Check if user account is active/verified if needed
-    // if (!user.isActive) {
-    //   return res.status(401).json({ error: 'Account is deactivated.' });
-    // }
 
     req.user = user;
     next();
@@ -105,7 +94,7 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
   }
 
   if (!token) {
-    return next(); // Continue without user
+    return next(); 
   }
 
   try {
@@ -118,12 +107,10 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
     
     next();
   } catch (error) {
-    // For optional auth, we just continue without user on error
     next();
   }
 });
 
-// Role-based access control that allows multiple roles
 const requireRoles = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
