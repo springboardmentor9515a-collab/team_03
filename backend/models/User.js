@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6,
-    select: false // Password won't be returned by default
+    select: false 
   },
   role: {
     type: String,
@@ -43,7 +43,6 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre('save', async function(next) {
-  // Only hash the password if it's modified (or new)
   if (!this.isModified('password')) {
     return next();
   }
@@ -60,7 +59,7 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Password comparison method
+
 userSchema.methods.matchPassword = async function(enteredPassword) {
   try {
     return await bcrypt.compare(enteredPassword, this.password);
@@ -83,7 +82,6 @@ userSchema.methods.toSafeObject = function() {
   };
 };
 
-// Remove password when converting to JSON
 userSchema.methods.toJSON = function() {
   return this.toSafeObject();
 };
