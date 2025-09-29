@@ -2,11 +2,10 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // Use MONGO_URI from environment or fallback to local MongoDB
+    
     const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI;
     
     console.log('Attempting to connect to MongoDB...');
-    console.log('Connection URI:', mongoURI.replace(/mongodb:\/\/([^:]+):([^@]+)@/, 'mongodb://***:***@')); // Hide password in logs
 
     const conn = await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
@@ -14,10 +13,8 @@ const connectDB = async () => {
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
-    //console.log(`Database Name: ${conn.connection.name}`);
     console.log(`Connection State: ${conn.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
 
-    // Handle connection events
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
     });
