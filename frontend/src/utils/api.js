@@ -2,7 +2,7 @@
 const API_URL = "http://localhost:5000";
 
 export async function registerUser(data) {
-  const res = await fetch(`${API_URL}/auth/register`, {
+  const res = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -12,7 +12,7 @@ export async function registerUser(data) {
 }
 
 export async function loginUser(data) {
-  const res = await fetch(`${API_URL}/auth/login`, {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -22,15 +22,19 @@ export async function loginUser(data) {
 }
 
 export async function getProfile() {
-  const res = await fetch(`${API_URL}/auth/profile`, {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/api/auth/profile`, {
     method: "GET",
-    credentials: "include"
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
   });
   return res.json();
 }
 
+
 export async function logoutUser() {
-  const res = await fetch(`${API_URL}/auth/logout`, {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
     method: "POST",
     credentials: "include"
   });

@@ -45,7 +45,8 @@ function Register() {
       setMsg("Registration successful! Redirecting...");
       setTimeout(() => navigate("/login"), 1500);
     } else {
-      setMsg(res.message || "Error registering");
+      setMsg(res.error || (res.errors && res.errors.map(e => e.msg).join(', ')) || res.message || "Error registering");
+
     }
   };
 
@@ -87,14 +88,14 @@ function Register() {
               required
             />
             <select name="role" onChange={handleChange} required value={form.role}>
-  <option value="citizen">Citizen</option>
-  <option value="official">Official</option>
-  <option value="admin">Admin</option>
+  <option value="citizen">citizen</option>
+  <option value="official">official</option>
+  <option value="admin">admin</option>
 </select>
 
 
-            <select name="location" onChange={handleChange} required value={form.location}>
-              <option value="">Select State</option>
+            <select name="location" onChange={handleChange}  required value={form.location}>
+              
               <option value="Andhra Pradesh">Andhra Pradesh</option>
               <option value="Arunachal Pradesh">Arunachal Pradesh</option>
               <option value="Assam">Assam</option>
