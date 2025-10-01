@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const User = require('../SchemaModels/user');
 const { auth } = require('../middleware/auth');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -169,6 +170,37 @@ router.put('/profile', auth, [
   });
 }));
 
+// Change password
+// PUT /api/auth/change-password
+router.put('/change-password', auth, [
+  body('oldPassword').exists().withMessage('Old password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array()
+    });
+  }
+
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.user.id).select('+password');
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  const isMatch = await user.matchPassword(oldPassword);
+  if (!isMatch) {
+    return res.status(400).json({ success: false, error: 'Old password is incorrect' });
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({ success: true, message: 'Password updated successfully' });
+}));
+
 router.get('/test', (req, res) => {
   res.json({ 
     success: true,
@@ -177,3 +209,76 @@ router.get('/test', (req, res) => {
 });
 
 module.exports = router;
+
+// Forgot Password
+// POST /api/auth/forgot-password
+const nodemailer = require('nodemailer');
+router.post('/forgot-password', [body('email').isEmail().withMessage('Valid email required')], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+  // Generate token
+  const token = crypto.randomBytes(32).toString('hex');
+  user.resetPasswordToken = token;
+  user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  await user.save();
+
+  // Set up Nodemailer transporter
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'ashritha.g2004@gmail.com',
+      pass: 'ndzqznfzmdqyxxul'
+    }
+  });
+
+  const resetUrl = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+  const mailOptions = {
+    from: 'ashritha.g2004@gmail.com',
+    to: user.email,
+    subject: 'Password Reset Request',
+    text: `Hello ${user.name},\n\nYou requested a password reset for your account. Click the link below to reset your password:\n${resetUrl}\n\nIf you did not request this, please ignore this email.\n\nThank you.`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: 'Password reset link sent to your email.' });
+  } catch (err) {
+    console.error('Error sending email:', err);
+    res.status(500).json({ success: false, error: 'Failed to send reset email.' });
+  }
+}));
+
+// Reset Password
+// POST /api/auth/reset-password
+router.post('/reset-password', [
+  body('token').exists().withMessage('Token is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
+
+  const { token, newPassword } = req.body;
+  const user = await User.findOne({ 
+    resetPasswordToken: token, 
+    resetPasswordExpires: { $gt: Date.now() } 
+  });
+  if (!user) {
+    return res.status(400).json({ success: false, error: 'Invalid or expired token' });
+  }
+
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.json({ success: true, message: 'Password has been reset successfully' });
+}));
