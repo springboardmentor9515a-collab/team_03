@@ -4,8 +4,12 @@ const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const User = require('../SchemaModels/user');
 const { auth } = require('../middleware/auth');
+const BlacklistToken = require('../SchemaModels/blacklistToken');
+const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
+
+
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -19,9 +23,9 @@ const generateToken = (user) => {
   );
 };
 
-// Register user
+// Register user with rate limiting
 // POST /api/auth/register
-router.post('/register', [
+router.post('/register', registerLimiter, [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
@@ -65,9 +69,9 @@ router.post('/register', [
   });
 }));
 
-// Login user
+// Login user with rate limiting
 // POST /api/auth/login
-router.post('/login', [
+router.post('/login', loginLimiter, [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').exists().withMessage('Password is required')
 ], asyncHandler(async (req, res) => {
@@ -80,7 +84,6 @@ router.post('/login', [
   }
 
   const { email, password } = req.body;
-
 
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
@@ -107,6 +110,7 @@ router.post('/login', [
     user: user.toSafeObject()
   });
 }));
+
 
 //Get user profile
 //GET /api/auth/profile
@@ -175,5 +179,55 @@ router.get('/test', (req, res) => {
     message: 'Auth routes are working!' 
   });
 });
+
+
+// Logout user with token blacklisting
+// POST /api/auth/logout
+router.post('/logout', auth, asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      success: false,
+      errors: errors.array() 
+    });
+  }
+
+  try {
+    // Getting token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'No token provided'
+      });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    // Check if token is already blacklisted
+    const existingBlacklistedToken = await BlacklistToken.findOne({ token });
+    if (existingBlacklistedToken) {
+      return res.status(200).json({
+        success: true,
+        message: 'Already logged out'
+      });
+    }
+
+    // Add token to blacklist
+    await BlacklistToken.create({ token });
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error during logout'
+    });
+  }
+}));
 
 module.exports = router;
