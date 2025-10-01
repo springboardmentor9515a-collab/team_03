@@ -4,12 +4,9 @@ const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const User = require('../SchemaModels/user');
 const { auth } = require('../middleware/auth');
-<<<<<<< HEAD
 const crypto = require('crypto');
-=======
 const BlacklistToken = require('../SchemaModels/blacklistToken');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
->>>>>>> 583bd6f58bf33498fec25bd0d29bef425bab41ed
 
 const router = express.Router();
 
