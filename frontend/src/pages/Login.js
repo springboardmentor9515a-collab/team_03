@@ -18,7 +18,7 @@ function Login() {
 
     if (res.success) {
       localStorage.setItem('token', res.token);
-  navigate("/dashboard");
+  navigate("/Dashboard");
 }
     else setMsg(res.message || "Invalid credentials");
   };
