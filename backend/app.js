@@ -77,6 +77,11 @@ const PORT = process.env.PORT || 5000;
 
 
 app.listen(PORT, () => {
-  console.log(`Authentication server running on port ${PORT}`);
-  console.log(`Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+  (async () => {
+    console.log(`Authentication server running on port ${PORT}`);
+    // Await mongoose connection to be ready
+    await mongoose.connection.asPromise();
+    const dbState = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+    console.log(`Database: ${dbState}`);
+  })();
 });
