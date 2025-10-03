@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import { getProfile, logoutUser } from "../utils/api";
 import { useNavigate } from "react-router-dom";
