@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { getProfile, logoutUser } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("All Categories"); // ✅ Moved here
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser) {
-      navigate("/login");
-    } else {
-      setUser(storedUser);
+    async function fetchProfile() {
+      const res = await getProfile();
+      if (res.success) setUser(res.user);
+      else navigate("/login");
     }
+    fetchProfile();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logoutUser();
     navigate("/login");
   };
 
