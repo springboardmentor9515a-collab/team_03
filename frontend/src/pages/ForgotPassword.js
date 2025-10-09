@@ -1,66 +1,72 @@
-
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import "../App.css";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    // TODO: API call to send reset instructions
-    setMsg(`If an account with ${email} exists, reset instructions were sent.`);
-  };
-
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    // TODO: API call to verify OTP
-    setMsg(`OTP ${otp} submitted for verification.`);
+    setMsg("");
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg("If an account with this email exists, a reset link has been sent to your email.");
+      } else {
+        setError(data.error || "Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    }
+    setLoading(false);
   };
 
   return (
-    <div style={{ backgroundColor: "#d0e7ff", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <div style={{ backgroundColor: "#fff", borderRadius: "8px", padding: "30px", width: "350px", boxShadow: "0 0 10px rgba(0,0,0,0.1)" }}>
-        
-        <h2 style={{ marginBottom: "20px", textAlign: "center" }}>Forgot Password</h2>
-        
-        <form onSubmit={handleEmailSubmit}>
-          <label htmlFor="email" style={{ display: "block", marginBottom: "5px" }}>
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: "100%", padding: "10px", marginBottom: "15px", borderRadius: "4px", border: "1px solid #ccc" }}
-          />
-          <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#5c6bbeff", color: "#fff", border: "none", borderRadius: "4px" }}>
-            Send Reset Instructions
-          </button>
-        </form>
+    <div className="auth-container">
+      <div className="auth-left" style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px", color: "#fff", textAlign: "center"}}>
+        <p style={{ fontSize: "4rem", marginBottom: "15px" }}>CIVIX</p>
+        <p style={{ fontSize: "2rem", marginBottom: "30px" }}>Reset Your Password</p>
+        <p style={{ fontSize: "1.2rem", marginBottom: "20px" }}>Don't worry, it happens to the best of us</p>
+      </div>
 
-        <form onSubmit={handleOtpSubmit} style={{ marginTop: "20px" }}>
-          <label htmlFor="otp" style={{ display: "block", marginBottom: "5px" }}>
-            Enter OTP
-          </label>
-          <input
-            id="otp"
-            type="text"
-            placeholder="Type OTP here"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-            style={{ width: "100%", padding: "10px", marginBottom: "15px", borderRadius: "4px", border: "1px solid #ccc" }}
-          />
-          <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#5c6bbeff", color: "#fff", border: "none", borderRadius: "4px" }}>
-            Submit OTP
-          </button>
-        </form>
+      <div className="auth-right">
+        <div className="auth-card">
+          <h2>Forgot Password</h2>
+          <p style={{ textAlign: "center", marginBottom: "20px", color: "#666" }}>
+            Enter your email address and we'll send you a link to reset your password.
+          </p>
+          
+          <form onSubmit={handleEmailSubmit}>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? "Sending..." : "Send Reset Link"}
+            </button>
+          </form>
 
-        {msg && <p style={{ color: "green", marginTop: "15px", textAlign: "center" }}>{msg}</p>}
+          {msg && <p className="auth-error" style={{ color: "green" }}>{msg}</p>}
+          {error && <p className="auth-error">{error}</p>}
+
+          <p className="auth-links">
+            Remember your password? <Link to="/login">Back to Sign In</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

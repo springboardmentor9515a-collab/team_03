@@ -299,7 +299,7 @@ router.post('/forgot-password', [body('email').isEmail().withMessage('Valid emai
     }
   });
 
-  const resetUrl = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+  const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
   const mailOptions = {
     from: 'ashritha.g2004@gmail.com',
     to: user.email,
