@@ -1,11 +1,7 @@
-// controllers/complaintController.js
 
 const Complaint = require('../SchemaModels/complaints');
 const User = require('../SchemaModels/user');
 
-// ========================================
-// 1️⃣ POST /complaints - Citizen submits complaint
-// ========================================
 exports.createComplaint = async (req, res) => {
   try {
     const {
@@ -58,9 +54,6 @@ exports.createComplaint = async (req, res) => {
   }
 };
 
-// ========================================
-// 2️⃣ GET /complaints - Admin fetches all complaints with filters
-// ========================================
 exports.getAllComplaints = async (req, res) => {
   try {
     const {
@@ -114,9 +107,7 @@ exports.getAllComplaints = async (req, res) => {
   }
 };
 
-// ========================================
-// 3️⃣ PUT /complaints/:id/assign - Admin assigns complaint to volunteer
-// ========================================
+
 exports.assignComplaint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -175,9 +166,6 @@ exports.assignComplaint = async (req, res) => {
   }
 };
 
-// ========================================
-// 4️⃣ GET /volunteers/me/complaints - Volunteer fetches assigned complaints
-// ========================================
 exports.getMyAssignedComplaints = async (req, res) => {
   try {
     const {
@@ -225,9 +213,7 @@ exports.getMyAssignedComplaints = async (req, res) => {
   }
 };
 
-// ========================================
-// 5️⃣ PUT /complaints/:id/status - Volunteer updates complaint status
-// ========================================
+
 exports.updateComplaintStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -274,7 +260,6 @@ exports.updateComplaintStatus = async (req, res) => {
 
     await complaint.save();
 
-    // Populate references
     await complaint.populate([
       { path: 'created_by', select: 'name email role' },
       { path: 'assigned_to', select: 'name email role' }
