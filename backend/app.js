@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
+const complaintRoutes = require('./routes/complaintRoutes');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -78,7 +80,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   (async () => {
     console.log(`Authentication server running on port ${PORT}`);
-    // Await mongoose connection to be ready
     await mongoose.connection.asPromise();
     const dbState = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
     console.log(`Database: ${dbState}`);
