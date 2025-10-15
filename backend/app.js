@@ -7,6 +7,8 @@ require('dotenv').config();
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
+const petitionRoutes = require('./routes/petitions');
+const volunteerRoutes = require('./routes/volunteers');
 
 const app = express();
 
@@ -33,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/petitions', petitionRoutes);
+app.use('/api/volunteers', volunteerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
