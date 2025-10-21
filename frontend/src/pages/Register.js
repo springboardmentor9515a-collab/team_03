@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from "react";
 import { registerUser } from "../utils/api";
 import { useNavigate, Link } from "react-router-dom";
@@ -91,6 +93,7 @@ function Register() {
   <option value="citizen">citizen</option>
   <option value="official">official</option>
   <option value="admin">admin</option>
+  <option value="volunteer">Volunteer</option>
 </select>
 
 
