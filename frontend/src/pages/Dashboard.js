@@ -5,7 +5,6 @@ import { getProfile, logoutUser } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -18,25 +17,52 @@ function Dashboard() {
     fetchProfile();
   }, [navigate]);
 
-
   const handleLogout = async () => {
     await logoutUser();
     navigate("/login");
   };
 
-  if (!user){
-     return <p>Loading...</p>;
+  // Navigate to complaint creation page
+  const goToComplaintCreate = () => {
+    navigate("/complaints/new");
+  };
+
+  if (!user) {
+    return <p>Loading...</p>;
   }
 
   return (
-
     <div style={{ padding: "32px", maxWidth: "700px", margin: "auto" }}>
-
       <h2>Welcome, {user.name}</h2>
-      <p><strong>Role:</strong> {user.role}</p>
-      <p><strong>Location:</strong> {user.location}</p>
-<p><strong>Latitude:</strong> {user.coordinates?.latitude}</p>
-<p><strong>Longitude:</strong> {user.coordinates?.longitude}</p>
+      <p>
+        <strong>Role:</strong> {user.role}
+      </p>
+      <p>
+        <strong>Location:</strong> {user.location}
+      </p>
+      <p>
+        <strong>Latitude:</strong> {user.coordinates?.latitude}
+      </p>
+      <p>
+        <strong>Longitude:</strong> {user.coordinates?.longitude}
+      </p>
+
+      <button
+        onClick={goToComplaintCreate}
+        style={{
+          padding: "10px 22px",
+          background: "#2563eb",
+          border: "none",
+          color: "#fff",
+          borderRadius: "6px",
+          fontSize: "1rem",
+          cursor: "pointer",
+          marginTop: "20px",
+          marginBottom: "20px",
+        }}
+      >
+        Create New Complaint
+      </button>
 
       <div style={{ marginTop: 32, marginBottom: 24 }}>
         {user.role === "citizen" ? (
@@ -70,13 +96,13 @@ function Dashboard() {
                 fontStyle: "italic",
               }}
             >
-              (Coming soon) This section will show complaints and petitions in your area.
+              (Coming soon) This section will show complaints and petitions in
+              your area.
             </div>
           </>
         )}
       </div>
 
-      
       <button
         onClick={handleLogout}
         style={{
