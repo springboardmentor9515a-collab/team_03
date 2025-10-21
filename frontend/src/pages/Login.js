@@ -1,3 +1,6 @@
+
+
+
 import React, { useState } from "react";
 import { loginUser } from "../utils/api";
 import { useNavigate, Link } from "react-router-dom";
@@ -16,12 +19,23 @@ function Login() {
     const res = await loginUser(form);
 
     if (res.success) {
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user", JSON.stringify(res.user));
-      navigate("/dashboard");
-    } else {
-      setMsg(res.message || "Invalid credentials");
-    }
+  localStorage.setItem("token", res.token);
+  localStorage.setItem("user", JSON.stringify(res.user));
+  if (res.user.role === "citizen") {
+    navigate("/dashboard");
+  } else if (res.user.role === "official") {
+    navigate("/admin/dashboard");
+  } else if (res.user.role === "volunteer") {
+    navigate("/volunteer/dashboard");
+  } else if (res.user.role === "admin") {
+    navigate("/admin/dashboard");
+  } else {
+    navigate("/dashboard"); // fallback
+  }
+} else {
+  setMsg(res.message || "Invalid credentials");
+}
+
   };
 
   return (
