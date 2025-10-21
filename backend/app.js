@@ -7,6 +7,8 @@ const cors = require('cors');
 const cloudinary = require('./config/cloudinary');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
+const petitionRoutes = require('./routes/petitions');
+const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
 const {protect} =require('./middleware/auth');
 
@@ -49,6 +51,8 @@ app.use('/api/auth', authRoutes);
 //To protect the all routes below this with JWT
 app.use(protect);
 
+app.use('/api/petitions', petitionRoutes);
+app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/complaints', complaintRoutes);
 
 // Health check endpoint
