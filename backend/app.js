@@ -1,19 +1,31 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
-require('dotenv').config();
 
+const cloudinary = require('./config/cloudinary');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
+const {protect} =require('./middleware/auth');
 
 const app = express();
 
 // Connect to database
 connectDB();
+
+// Test Cloudinary connection (runs once on startup)
+(async () => {
+  try {
+    const res = await cloudinary.api.ping();
+    console.log('Cloudinary Connected:', res.status); // should log "ok"
+  } catch (err) {
+    console.error('Cloudinary connection failed:', err.message);
+  }
+})();
 
 // CORS configuration
 const corsOptions = {
@@ -35,6 +47,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+
+//To protect the all routes below this with JWT
+app.use(protect);
+
 app.use('/api/petitions', petitionRoutes);
 app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/complaints', complaintRoutes);
