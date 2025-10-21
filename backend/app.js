@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -7,6 +6,9 @@ require('dotenv').config();
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
+const petitionRoutes = require('./routes/petitions');
+const volunteerRoutes = require('./routes/volunteers');
+const complaintRoutes = require('./routes/complaintRoutes');
 
 const app = express();
 
@@ -33,6 +35,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/petitions', petitionRoutes);
+app.use('/api/volunteers', volunteerRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -77,6 +82,10 @@ const PORT = process.env.PORT || 5000;
 
 
 app.listen(PORT, () => {
-  console.log(`Authentication server running on port ${PORT}`);
-  console.log(`Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+  (async () => {
+    console.log(`Authentication server running on port ${PORT}`);
+    await mongoose.connection.asPromise();
+    const dbState = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+    console.log(`Database: ${dbState}`);
+  })();
 });

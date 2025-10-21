@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import { getProfile, logoutUser } from "../utils/api";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
   useEffect(() => {
     async function fetchProfile() {
@@ -64,22 +64,13 @@ function Dashboard() {
         Create New Complaint
       </button>
 
-      <div style={{ marginTop: 32, marginBottom: 24 }}>
-        {user.role === "citizen" ? (
-          <>
-            <h3>Your Petitions</h3>
-            <div
-              style={{
-                padding: "15px",
-                border: "2px solid #bbb",
-                borderRadius: "8px",
-                background: "#f0f4ff",
-                marginTop: "10px",
-                color: "#333",
-                fontStyle: "italic",
-              }}
-            >
-              (Coming soon) This section will display your petitions here.
+            <div className="mt-6">
+              <button
+                onClick={handleLogout}
+                className="w-full text-sm px-3 py-2 rounded-md border border-slate-200 hover:bg-slate-50"
+              >
+                Logout
+              </button>
             </div>
           </>
         ) : (
@@ -99,8 +90,8 @@ function Dashboard() {
               (Coming soon) This section will show complaints and petitions in
               your area.
             </div>
-          </>
-        )}
+          </main>
+        </div>
       </div>
 
       <button

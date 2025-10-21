@@ -3,14 +3,12 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const User = require('../SchemaModels/user');
-const { auth } = require('../middleware/auth');
+const { auth,requireAdmin } = require('../middleware/auth');
 const crypto = require('crypto');
 const BlacklistToken = require('../SchemaModels/blacklistToken');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
-
-
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -30,7 +28,8 @@ router.post('/register', registerLimiter, [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('role').optional().isIn(['citizen', 'official', 'admin']).withMessage('Role must be citizen, official, or admin')
+  // ✅ FIXED: allow volunteer role
+  body('role').optional().isIn(['citizen', 'official', 'admin', 'volunteer']).withMessage('Role must be citizen, official, admin, or volunteer')
 ], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -69,6 +68,7 @@ router.post('/register', registerLimiter, [
     user: user.toSafeObject()
   });
 }));
+
 
 // Login user with rate limiting
 // POST /api/auth/login
@@ -110,6 +110,13 @@ router.post('/login', loginLimiter, [
     token,
     user: user.toSafeObject()
   });
+}));
+
+
+// GET /api/auth/volunteers
+router.get('/volunteers', auth, requireAdmin, asyncHandler(async (req, res) => {
+  const volunteers = await User.find({ role: 'volunteer' });
+  res.json({ success: true, volunteers });
 }));
 
 
@@ -289,12 +296,10 @@ router.post('/forgot-password', [body('email').isEmail().withMessage('Valid emai
     auth: {
       user: 'ashritha.g2004@gmail.com',
       pass: 'ndzqznfzmdqyxxul'
-    },
-  tls: {
-    rejectUnauthorized: false
-  }});
+    }
+  });
 
-  const resetUrl = `http://localhost:5000/api/auth/reset-password?token=${token}`;
+  const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
   const mailOptions = {
     from: 'ashritha.g2004@gmail.com',
     to: user.email,

@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const petitionSchema = new Schema({
     creator: { 
         type: Schema.Types.ObjectId, 
-        ref: 'user',
+        ref: 'User',
         required: true, 
     },
     title: {
@@ -32,8 +32,8 @@ const petitionSchema = new Schema({
     status: {
         type: String,
         required: true,
-        enum: ["active", "under_review", "closed"], 
-        default:"active",
+        enum: ["received", "in_review", "resolved"], 
+        default:"received",
     },
 }, 
 {timestamps: true});
