@@ -1,54 +1,23 @@
 const User = require('../SchemaModels/user');
 const Complaint = require('../SchemaModels/complaints');
 const cloudinary = require('../config/cloudinary');
-const streamifier = require('streamifier');
-const multer = require("multer");
-
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.match(/^image\/(jpeg|jpg|png)$/)) {
-      return cb(new Error("Only .jpeg, .jpg and .png formats are allowed!"));
-    }
-    cb(null, true);
-  },
-});
+const { body, param, query } = require('express-validator');
+// const streamifier = require('streamifier');
+// const multer = require("multer");
 
 exports.createComplaint = async (req, res) => {
   try {
-    console.log("Uploaded file:", req.file); // ✅ Debug
-
     let photo_url = null;
 
-    // 1️⃣ Upload image to Cloudinary if file exists
+    // Upload image to Cloudinary if file exists
     if (req.file) {
-      try {
-        const uploadResult = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "complaints" },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          require("streamifier").createReadStream(req.file.buffer).pipe(stream);
-        });
-
-        photo_url = uploadResult.secure_url;
-        console.log("✅ Uploaded to Cloudinary:", photo_url);
-      } catch (cloudErr) {
-        console.error("❌ Cloudinary Upload Error:", cloudErr);
-        return res.status(500).json({
-          success: false,
-          message: "Cloudinary upload failed",
-          error: cloudErr.message,
-        });
-      }
-    } else {
-      console.log("⚠️ No file received from frontend");
-    }
+    // For Cloudinary: convert buffer to base64 string
+    const fileStr = `data:${
+      req.file.mimetype
+    };base64,${req.file.buffer.toString("base64")}`;
+    const upload = await uploadImage(fileStr);
+    photo_url = upload.secure_url;
+  }
 
     // 2️⃣ Parse & validate location
     let location = req.body.location;
