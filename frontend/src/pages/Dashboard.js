@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
   useEffect(() => {
@@ -64,50 +63,31 @@ function Dashboard() {
         Create New Complaint
       </button>
 
-            <div className="mt-6">
-              <button
-                onClick={handleLogout}
-                className="w-full text-sm px-3 py-2 rounded-md border border-slate-200 hover:bg-slate-50"
-              >
-                Logout
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h3>Complaints & Petitions in Your Area</h3>
-            <div
-              style={{
-                padding: "15px",
-                border: "2px solid #bbb",
-                borderRadius: "8px",
-                background: "#f0f4ff",
-                marginTop: "10px",
-                color: "#333",
-                fontStyle: "italic",
-              }}
-            >
-              (Coming soon) This section will show complaints and petitions in
-              your area.
-            </div>
-          </main>
+      <div style={{ marginTop: "20px" }}>
+        <h3>Complaints & Petitions in Your Area</h3>
+        <div
+          style={{
+            padding: "15px",
+            border: "2px solid #bbb",
+            borderRadius: "8px",
+            background: "#f0f4ff",
+            marginTop: "10px",
+            color: "#333",
+            fontStyle: "italic",
+          }}
+        >
+          (Coming soon) This section will show complaints and petitions in your area.
         </div>
       </div>
 
-      <button
-        onClick={handleLogout}
-        style={{
-          padding: "10px 22px",
-          background: "#4f46e5",
-          border: "none",
-          color: "#fff",
-          borderRadius: "6px",
-          fontSize: "1rem",
-          cursor: "pointer",
-        }}
-      >
-        Logout
-      </button>
+      <div className="mt-6">
+        <button
+          onClick={handleLogout}
+          className="w-full text-sm px-3 py-2 rounded-md border border-slate-200 hover:bg-slate-50"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }

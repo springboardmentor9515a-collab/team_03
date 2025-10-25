@@ -27,5 +27,5 @@ votesSchema.index({
     unique: true
 });
 
-const votes = mongoose.model('votes', votesSchema);
-module.exports = votes;
+const Vote = mongoose.model('votes', votesSchema);
+module.exports = Vote;
