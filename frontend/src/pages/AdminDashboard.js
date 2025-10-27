@@ -1,9 +1,46 @@
 
 
-
-
 import React, { useEffect, useState } from "react";
-import { getAllComplaints, getVolunteers, assignVolunteer } from "../utils/api";
+import {
+  getAllComplaints,
+  getVolunteers,
+  assignVolunteer,
+  getProfile
+} from "../utils/api";
+import "./AdminDashboard.css";
+
+function AdminProfile({ profile }) {
+  if (!profile) return <div>Loading profile...</div>;
+  const user = profile.user || {};
+
+  return (
+    <div className="profile-card-centered">
+      <div className="profile-avatar">
+        {user.name ? user.name[0].toUpperCase() : "?"}
+      </div>
+      <div className="profile-info">
+        <div className="profile-name"><h1>{user.name || "No Name"}</h1></div>
+        <div className="profile-role">{user.role || "Role not set"}</div>
+        <div className="profile-location">
+          <span role="img" aria-label="location">📍</span>{" "}
+          {user.location || "Location not set"}
+        </div>
+        <div className="profile-email">
+          {user.email ? user.email : "No email"}
+        </div>
+        {user.phone &&
+          <div className="profile-phone">
+            {user.phone}
+          </div>
+        }
+        <div className="profile-id">
+          ID: {user.id || "N/A"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function uniqueComplaints(arr) {
   const map = new Map();
@@ -20,22 +57,11 @@ function volunteerDisplay(v) {
       ? v.name
       : v.email
       ? v.email
-      : v._id
-      ? v._id.toString()
+      : v.id
+      ? v.id.toString()
       : JSON.stringify(v);
   }
   return v.toString();
-}
-
-function LocationName({ location }) {
-  if (!location) return <span>N/A</span>;
-  if (location.city) {
-    return <span>{location.address ? `${location.address}, ` : ""}{location.city}{location.state ? `, ${location.state}` : ""}</span>;
-  }
-  if (location.address) return <span>{location.address}</span>;
-  if (location.coordinates && location.coordinates.length === 2)
-    return <span>{location.coordinates[1]}, {location.coordinates[0]}</span>;
-  return <span>{typeof location === "string" ? location : "N/A"}</span>;
 }
 
 function getStatusLabel(c) {
@@ -46,30 +72,63 @@ function getStatusLabel(c) {
   return c.status ? c.status[0].toUpperCase() + c.status.slice(1) : "-";
 }
 
-function AdminDashboard() {
+function LocationName({ location }) {
+  if (!location) return <span>N/A</span>;
+  if (location.city) {
+    return (
+      <span>
+        {location.address ? `${location.address}, ` : ""}
+        {location.city}
+        {location.state ? `, ${location.state}` : ""}
+      </span>
+    );
+  }
+  if (location.address) return <span>{location.address}</span>;
+  if (location.coordinates && location.coordinates.length === 2)
+    return <span>{location.coordinates[1]}, {location.coordinates[0]}</span>;
+  return <span>{typeof location === "string" ? location : "N/A"}</span>;
+}
+
+export default function AdminDashboard() {
+  const [selectedTab, setSelectedTab] = useState("dashboard");
+  const [profile, setProfile] = useState(null);
+
   const [complaints, setComplaints] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [filters, setFilters] = useState({ category: "", status: "", location: "" });
   const [loading, setLoading] = useState(true);
   const [assigningId, setAssigningId] = useState(null);
   const [selectState, setSelectState] = useState({});
-  // Added for pagination:
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10); // You can allow user to choose, or hardcode.
+  const [limit, setLimit] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
 
-  async function fetchData(currPage = 1, currLimit = 10) {
+  async function fetchData(currPage = 1, currLimit = 5) {
     setLoading(true);
     const complaintsRes = await getAllComplaints(`?page=${currPage}&limit=${currLimit}`);
     const volunteersRes = await getVolunteers();
+    console.log("Loaded volunteers from API:", volunteersRes.data);
     setComplaints(uniqueComplaints(complaintsRes.data?.data || []));
     setVolunteers(volunteersRes.data || []);
-    // Set total pages from backend meta:
     setTotalPages(complaintsRes.data?.pagination?.totalPages || 1);
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(page, limit); }, [page, limit]);
+  useEffect(() => {
+    fetchData(page, limit);
+  }, [page, limit]);
+
+  useEffect(() => {
+    getProfile().then(res => {
+      if (res.ok) {
+        console.log("Loaded profile from backend:", res.data);
+        setProfile(res.data);
+      } else {
+        console.warn("Profile fetch failed:", res);
+        setProfile(null);
+      }
+    });
+  }, []);
 
   function complaintMatchesStatus(c) {
     if (!filters.status) return true;
@@ -105,16 +164,20 @@ function AdminDashboard() {
     .filter(complaintMatchesLocation);
 
   const handleSelect = (complaintId, volunteerId) => {
+    const vObj = volunteers.find(v => v.id === volunteerId);
+    console.log("Selecting volunteerId:", volunteerId, "Type:", typeof volunteerId, "Obj:", vObj);
     setSelectState(s => ({ ...s, [complaintId]: volunteerId }));
   };
 
   const handleAssign = async (complaintId) => {
     const volunteerId = selectState[complaintId];
+    console.log("Attempting to assign volunteerId:", volunteerId, "Type:", typeof volunteerId);
     if (!volunteerId) return;
     setAssigningId(complaintId);
     const res = await assignVolunteer(complaintId, volunteerId);
+    console.log("Assignment API result:", res);
     if (res.ok) {
-      await fetchData(page, limit); // always reload to ensure backend truth
+      await fetchData(page, limit);
       setSelectState(s => ({ ...s, [complaintId]: "" }));
     } else {
       let msg = "Assignment failed";
@@ -145,115 +208,144 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="page-container">
-      <h2 className="dashboard-title">Complaints Dashboard</h2>
-      <div className="dashboard-filters">
-        <select value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
-          <option value="">All Categories</option>
-          {[...new Set(complaints.map(c => c.category))].map(c => c && <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
-          {statusChoices.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="Location"
-          value={filters.location}
-          onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
-          className="civix-location-input"
-        />
-        
-        <button onClick={handleLoadAll} style={{ marginLeft: 12 }}>Load All</button>
-      </div>
-      {loading ? (
-        <p>Loading complaints...</p>
-      ) : filteredComplaints.length === 0 ? (
-        <div className="dashboard-placeholder">No complaints found.</div>
-      ) : (
-        <div>
-          
-          <div className="pagination-controls" style={{ marginBottom: 12 }}>
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
-            <span style={{ margin: "0 8px" }}>Page {page} of {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</button>
-           
-            <span style={{ marginLeft: 16 }}>
-              Show{" "}
-              <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}>
-                {[5, 10, 20, 50].map(sz => <option key={sz} value={sz}>{sz}</option>)}
-              </select>
-              {" "}per page
-            </span>
-          </div>
-          <div className="civix-table-container">
-            <table className="civix-complaints-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Location</th>
-                  <th>Assignment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredComplaints.map(c => (
-                  <tr key={c._id}>
-                    <td>{c.title}</td>
-                    <td>{c.description}</td>
-                    <td>{c.category}</td>
-                    <td>
-                      <b>{getStatusLabel(c)}</b>
-                    </td>
-                    <td>
-                      <LocationName location={c.location} />
-                    </td>
-                    <td>
-                      {c.assigned_to ? (
-                        <span style={{ color: "#045", fontWeight: 600 }}>
-                          Assigned to: {volunteerDisplay(c.assigned_to)}
-                        </span>
-                      ) : (
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                          <select
-                            className="assign-dropdown"
-                            disabled={assigningId === c._id}
-                            value={selectState[c._id] || ""}
-                            onChange={e => handleSelect(c._id, e.target.value)}
-                          >
-                            <option value="">Assign Volunteer</option>
-                            {volunteers.map(v => (
-                              <option
-                                key={v._id}
-                                value={v._id}
-                              >
-                                {volunteerDisplay(v)}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            className="assign-btn"
-                            disabled={!selectState[c._id] || assigningId === c._id}
-                            onClick={() => handleAssign(c._id)}
-                            style={{ marginLeft: 8 }}
-                          >
-                            {assigningId === c._id ? "Assigning..." : "Assign"}
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <div className="admin-main-container">
+      {/* Sidebar, no profile card here! */}
+      <aside className="admin-sidebar">
+        <div className="sidebar-tabs">
+          <button
+            className={selectedTab === "dashboard" ? "active" : ""}
+            onClick={() => setSelectedTab("dashboard")}
+          >
+            Dashboard
+          </button>
+          <button
+            className={selectedTab === "profile" ? "active" : ""}
+            onClick={() => setSelectedTab("profile")}
+          >
+            Profile
+          </button>
         </div>
-      )}
+      </aside>
+      <div className="admin-content">
+        {selectedTab === "profile" ? (
+          <div className="profile-center-panel">
+            <AdminProfile profile={profile} />
+          </div>
+        ) : (
+          <>
+        <span className="dashboard-title">CIVIX</span>
+            <h2 className="dashboard-title">Complaints Dashboard</h2>
+            <div className="dashboard-filters">
+              <select value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
+                <option value="">All Categories</option>
+                {[...new Set(complaints.map(c => c.category))].map(c => c && <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
+                {statusChoices.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Location"
+                value={filters.location}
+                onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+                className="civix-location-input"
+              />
+              <button onClick={handleLoadAll} style={{ marginLeft: 12 }}>Load All</button>
+            </div>
+            <div className="pagination-controls" style={{ marginBottom: 12 }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
+              <span style={{ margin: "0 8px" }}>Page {page} of {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</button>
+              <span style={{ marginLeft: 16 }}>
+                Show{" "}
+                <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}>
+                  {[5, 10, 20, 50].map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                </select>
+                {" "}per page
+              </span>
+            </div>
+            <div className="civix-table-container">
+              <table className="civix-complaints-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Location</th>
+                    <th>Assignment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="dashboard-placeholder">Loading complaints...</td>
+                    </tr>
+                  ) : filteredComplaints.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="dashboard-placeholder">No complaints found.</td>
+                    </tr>
+                  ) : (
+                    filteredComplaints.map(c => (
+                      <tr key={c._id}>
+                        <td>{c.title}</td>
+                        <td>{c.description}</td>
+                        <td>{c.category}</td>
+                        <td>
+                          <b>{getStatusLabel(c)}</b>
+                        </td>
+                        <td>
+                          <LocationName location={c.location} />
+                        </td>
+                        <td>
+                          {c.assigned_to ? (
+                            <span style={{ color: "#045", fontWeight: 600 }}>
+                              Assigned to: {volunteerDisplay(
+                                typeof c.assigned_to === "object"
+                                  ? c.assigned_to
+                                  : volunteers.find(v => v.id === c.assigned_to)
+                              )}
+                            </span>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <select
+                                className="assign-dropdown"
+                                disabled={assigningId === c._id}
+                                value={selectState[c._id] || ""}
+                                onChange={e => handleSelect(c._id, e.target.value)}
+                              >
+                                <option value="">Assign Volunteer</option>
+                                {volunteers.map(v => (
+                                  <option
+                                    key={v.id}
+                                    value={v.id}
+                                  >
+                                    {volunteerDisplay(v)}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                className="assign-btn"
+                                disabled={!selectState[c._id] || assigningId === c._id}
+                                onClick={() => handleAssign(c._id)}
+                                style={{ marginLeft: 8 }}
+                              >
+                                {assigningId === c._id ? "Assigning..." : "Assign"}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
-
-export default AdminDashboard;
