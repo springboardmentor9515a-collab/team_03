@@ -147,7 +147,6 @@ export async function getAssignedComplaints() {
   return { ok: res.ok, data: await res.json() };
 }
 
-
 export async function updateComplaintStatus(complaintId, status, admin_notes = "") {
   const res = await fetch(`${API_URL}/api/complaints/${complaintId}/status`, {
     method: "PUT",
