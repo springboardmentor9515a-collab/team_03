@@ -33,7 +33,7 @@ export async function getProfile() {
     method: "GET",
     headers: getAuthHeaders()
   });
-  return res.json();
+  return { ok: res.ok, data: await res.json() };
 }
 
 export async function logoutUser() {
@@ -47,6 +47,7 @@ export async function logoutUser() {
 // --- COMPLAINTS ---
 
 
+
 export async function createComplaint({ title, description, category, location, photo_url }) {
   const res = await fetch(`${API_URL}/api/complaints`, {
     method: "POST",
@@ -56,15 +57,12 @@ export async function createComplaint({ title, description, category, location, 
   return { ok: res.ok, data: await res.json() };
 }
 
-
-
 export async function getMyComplaints() {
   const res = await fetch(`${API_URL}/api/complaints?created_by=me`, {
     headers: getAuthHeaders()
   });
   return { ok: res.ok, data: await res.json() };
 }
-
 
 export async function getAllComplaints(query = "") {
   const res = await fetch(`${API_URL}/api/complaints${query}`, {
@@ -74,14 +72,29 @@ export async function getAllComplaints(query = "") {
 }
 
 
-
 export async function assignVolunteer(complaintId, volunteerId) {
-  const res = await fetch(`${API_URL}/api/complaints/${complaintId}/assign`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ volunteer_id: volunteerId })
-  });
-  return { ok: res.ok, data: await res.json() };
+  if (!volunteerId || typeof volunteerId !== "string" || volunteerId.length !== 24) {
+    return {
+      ok: false,
+      data: { error: "Invalid volunteer ID: must be a valid MongoDB ObjectId string." }
+    };
+  }
+  try {
+    const res = await fetch(`${API_URL}/api/complaints/${complaintId}/assign`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ volunteer_id: volunteerId })
+    });
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = { error: "Response is not valid JSON" };
+    }
+    return { ok: res.ok, data };
+  } catch (e) {
+    return { ok: false, data: { error: e.message || "Network error" } };
+  }
 }
 
 
@@ -94,15 +107,12 @@ export async function getVolunteers() {
   return { ok: res.ok, data: json.volunteers || [] };
 }
 
-
 export async function getAssignedComplaints() {
   const res = await fetch(`${API_URL}/api/complaints/assigned`, {
     headers: getAuthHeaders()
   });
   return { ok: res.ok, data: await res.json() };
 }
-
-
 
 export async function updateComplaintStatus(complaintId, status, admin_notes = "") {
   const res = await fetch(`${API_URL}/api/complaints/${complaintId}/status`, {
