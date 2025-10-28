@@ -17,7 +17,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} /> {/* citizen */}
+        <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/ComplaintCreate" element={<ComplaintCreate />} />
