@@ -46,7 +46,7 @@ export default function PetitionDetails() {
         onClick={() => navigate(-1)}
         className="mb-4 text-blue-600 hover:underline"
       >
-        ← Back to Petitions
+        ← Back to Dashboard
       </button>
 
       <div className="bg-white shadow-md rounded-2xl p-6 max-w-3xl mx-auto">
