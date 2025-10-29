@@ -9,6 +9,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ComplaintCreate from "./pages/ComplaintCreate";
 import Petitions from "./pages/Petitions";
+import PetitionsDetails from "./pages/PetitionsDetails";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/ComplaintCreate" element={<ComplaintCreate />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/petitions" element={<Petitions />} />
+        <Route path="/petitions/:id" element={<PetitionsDetails />} />
       </Routes>
     </BrowserRouter>
   );

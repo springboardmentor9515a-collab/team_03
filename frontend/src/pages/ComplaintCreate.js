@@ -6,9 +6,9 @@ import 'leaflet/dist/leaflet.css';
 function LocationSelector({ setForm }) {
   useMapEvents({
     click(e) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        location: `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`
+        location: `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`,
       }));
     },
   });
@@ -22,23 +22,43 @@ function ComplaintCreate() {
     location: '',
     description: '',
     photo: null,
-    priority: 'medium'
+    priority: 'medium',
   });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const mapDefault = [12.9716, 77.5946];
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'photo') {
-      setForm(prev => ({ ...prev, photo: files[0] }));
+      setForm((prev) => ({ ...prev, photo: files[0] }));
     } else {
-      setForm(prev => ({ ...prev, [name]: value }));
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = async e => {
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setForm((prev) => ({
+          ...prev,
+          location: `${latitude.toFixed(5)},${longitude.toFixed(5)}`,
+        }));
+      },
+      (err) => {
+        console.error(err);
+        alert('Failed to fetch your location.');
+      }
+    );
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     setLoading(true);
@@ -61,27 +81,42 @@ function ComplaintCreate() {
     formData.append('description', form.description.trim());
     formData.append('category', form.category);
     formData.append('priority', form.priority);
+    // ✅ Correct structure for nested location (no backend edit needed)
     formData.append('location[type]', 'Point');
-    formData.append('location[coordinates][]', locParts[1]); // lng
-    formData.append('location[coordinates][]', locParts[0]); // lat
+    formData.append('location[coordinates][]', locParts[1]); // longitude
+    formData.append('location[coordinates][]', locParts[0]); // latitude
     if (form.photo) formData.append('photo', form.photo);
 
     const token = localStorage.getItem('token');
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-    try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/complaints`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
-      });
+    try {const token = localStorage.getItem('token');
 
+const res = await fetch(`${API_URL}/api/complaints`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  body: formData,
+});
+
+    
+    
+      
       const data = await res.json();
       console.log('Complaint Response:', data);
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         setMessage('Complaint submitted successfully!');
         setTimeout(() => navigate('/petitions'), 1500);
-        setForm({ title: '', category: '', location: '', description: '', photo: null, priority: 'medium' });
+        setForm({
+          title: '',
+          category: '',
+          location: '',
+          description: '',
+          photo: null,
+          priority: 'medium',
+        });
       } else {
         setMessage(data.error || data.message || 'Submission failed.');
       }
@@ -147,6 +182,13 @@ function ComplaintCreate() {
 
             <div className="flex-1 mt-4 md:mt-0">
               <label className="block mb-2 font-medium">Location</label>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="text-sm text-blue-600 underline mb-1"
+              >
+                Use My Current Location
+              </button>
               <input
                 type="text"
                 name="location"
@@ -186,10 +228,13 @@ function ComplaintCreate() {
             <input type="file" name="photo" accept="image/*" onChange={handleChange} />
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+            className={`px-4 py-2 rounded-md text-white ${
+              loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             {loading ? 'Submitting...' : 'Submit Complaint'}
           </button>
