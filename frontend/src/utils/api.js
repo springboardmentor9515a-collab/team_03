@@ -150,13 +150,15 @@ export async function getAssignedComplaints() {
 
 export async function updateComplaintStatus(id, status) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`/api/complaints/${id}/status`, {
-    method: "PATCH",
+  const res = await fetch(`${API_URL}/api/complaints/${id}/status`, {
+    method: "PUT", // ✅ Must be PUT, not PATCH
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ status }),
   });
+
   return res.json();
 }
+
