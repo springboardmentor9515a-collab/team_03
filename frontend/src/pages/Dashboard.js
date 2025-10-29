@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { getProfile, logoutUser } from "../utils/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function Dashboard() {
 
@@ -72,6 +72,19 @@ function Dashboard() {
             >
               (Coming soon) This section will show complaints and petitions in your area.
             </div>
+              {/* Add quick link for admins/officials to create petitions */}
+              <div style={{ marginTop: 12 }}>
+                {(user.role === 'admin' || user.role === 'official') && (
+                  <Link to="/petitions/create" style={{ display: 'inline-block', marginTop: 12, padding: '8px 12px', background: '#06b6d4', color: '#fff', borderRadius: 6, textDecoration: 'none' }}>
+                    Create Petition
+                  </Link>
+                )}
+                {(user.role === 'admin' || user.role === 'official') && (
+                  <Link to="/petitions/assign" style={{ display: 'inline-block', marginLeft: 12, marginTop: 12, padding: '8px 12px', background: '#0ea5a4', color: '#fff', borderRadius: 6, textDecoration: 'none' }}>
+                    Assign Petitions
+                  </Link>
+                )}
+              </div>
           </>
         )}
       </div>

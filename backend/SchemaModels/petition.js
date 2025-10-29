@@ -29,6 +29,19 @@ const petitionSchema = new Schema({
         trim: true,
         maxlength: 250,
     },
+    updates: [
+        {
+            author: { type: Schema.Types.ObjectId, ref: 'User' },
+            role: { type: String },
+            note: { type: String, trim: true },
+            status: { type: String, enum: ["received", "in_review", "resolved"] },
+            createdAt: { type: Date, default: Date.now }
+        }
+    ],
+    assignedVolunteer: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
     status: {
         type: String,
         required: true,

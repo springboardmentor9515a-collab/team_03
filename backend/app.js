@@ -9,6 +9,7 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
+const pollRoutes = require('./routes/polls');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/petitions', petitionRoutes);
 app.use('/api/volunteers', volunteerRoutes);
+app.use('/api/polls', pollRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

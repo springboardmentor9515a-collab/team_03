@@ -39,7 +39,15 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  profile_photo_url: {
+    type: String,
+    trim: true
+  },
+  profile_photo_public_id: {
+    type: String,
+    trim: true
+  }
 }, {
   timestamps: true
 });
