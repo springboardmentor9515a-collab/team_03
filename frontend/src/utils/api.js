@@ -141,17 +141,22 @@ export async function getVolunteers() {
 }
 
 export async function getAssignedComplaints() {
-  const res = await fetch(`${API_URL}/api/complaints/assigned`, {
+  const res = await fetch(`${API_URL}/api/complaints/volunteers/me/complaints`, {
     headers: getAuthHeaders(),
   });
   return { ok: res.ok, data: await res.json() };
 }
 
-export async function updateComplaintStatus(complaintId, status, admin_notes = "") {
-  const res = await fetch(`${API_URL}/api/complaints/${complaintId}/status`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status, admin_notes }),
+
+export async function updateComplaintStatus(id, status) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`/api/complaints/${id}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
   });
-  return { ok: res.ok, data: await res.json() };
+  return res.json();
 }

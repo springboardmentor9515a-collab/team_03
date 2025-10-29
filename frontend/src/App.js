@@ -10,6 +10,8 @@ import ResetPassword from "./pages/ResetPassword";
 import ComplaintCreate from "./pages/ComplaintCreate";
 import Petitions from "./pages/Petitions";
 import PetitionsDetails from "./pages/PetitionsDetails";
+import VolunteerDashboard from "./pages/VolunteerDashbord";
+import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/petitions" element={<Petitions />} />
         <Route path="/petitions/:id" element={<PetitionsDetails />} />
+        <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
       </Routes>
     </BrowserRouter>
   );
