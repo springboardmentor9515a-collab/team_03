@@ -8,4 +8,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-module.exports = cloudinary;
+
+exports.uploadImage = async (filePath, options = {}) => {
+  // File type/size validation can be done before or after this
+  return await cloudinary.uploader.upload(filePath, {
+    folder: "complaints",
+    resource_type: "image",
+    ...options,
+  });
+};
