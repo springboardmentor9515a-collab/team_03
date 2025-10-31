@@ -39,7 +39,7 @@ export async function getProfile() {
     method: "GET",
     headers: getAuthHeaders(),
   });
-  return res.json();
+  return { ok: res.ok, data: await res.json() };
 }
 
 export async function logoutUser() {
