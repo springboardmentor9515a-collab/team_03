@@ -1,11 +1,22 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const { validateRequest } = require('../middleware/validateRequest');
-const upload = require('../middleware/upload');
+// const upload = require('../middleware/upload');
 const { auth, requireCitizen, requireAdmin, requireVolunteer } = require('../middleware/auth');
 const complaintController = require('../controllers/complaintControllers');
-
+const multer = require("multer");
 const router = express.Router();
+
+// Multer setup for handling file uploads (memory storage -> buffer)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    if (["image/jpeg", "image/png"].includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Only jpeg/png images allowed"));
+  },
+});
 
 // Citizen submits complaint
 router.post(
@@ -35,8 +46,7 @@ router.post(
   validateRequest,
   complaintController.createComplaint
 );
-
-module.exports = router;
+//module.exports = router;
 
 
 //GET /complaints - Admin fetches all complaints

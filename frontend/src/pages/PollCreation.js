@@ -65,7 +65,6 @@ export default function PollCreate() {
 
     setLoading(true);
 
-    // always send as target_location, not location
     const res = await createPoll({
       title,
       options: options.filter(o => o.trim()),
@@ -88,7 +87,7 @@ export default function PollCreate() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pb-14">
-      {/* Navigation */}
+     
       <nav className="w-full max-w-full bg-white py-4 px-12 shadow-sm flex justify-between items-center rounded-b-xl">
         <span
           className="text-blue-600 font-extrabold text-[2rem] tracking-wide cursor-pointer select-none"
@@ -118,7 +117,8 @@ export default function PollCreate() {
       >
         <h2 className="text-2xl font-bold mb-1">Create New Poll</h2>
         <p className="text-gray-500 text-base mb-4">Engage your community by creating a poll to gather feedback on local issues.</p>
-        {/* Poll Question */}
+
+          
         <div>
           <label className="block text-base font-semibold mb-1">
             Poll Question<span className="text-red-400">*</span>
@@ -143,7 +143,8 @@ export default function PollCreate() {
             rows={3}
           />
         </div>
-        {/* Poll Options */}
+
+              
         <div>
           <div className="flex justify-between items-end">
             <span className="block text-base font-semibold mb-1">
@@ -176,7 +177,8 @@ export default function PollCreate() {
             </button>
           </div>
         </div>
-        {/* Location */}
+
+              
         <div>
           <label className="block text-base font-semibold mb-1">
             Target Location<span className="text-red-400">*</span>
@@ -192,7 +194,7 @@ export default function PollCreate() {
             {autoLocation ? "Location detected automatically. You can change it." : "Please enter your area or city manually."}
           </p>
         </div>
-        {/* Closes On */}
+            
         <div>
           <label className="block text-base font-semibold mb-1">Closes On</label>
           <input
@@ -204,13 +206,15 @@ export default function PollCreate() {
           />
           <p className="text-xs text-gray-400 mt-1">Maximum 30 days from today.</p>
         </div>
-        {/* Community Guidelines */}
+
+            
         <div className="bg-blue-50 border border-blue-300 rounded-md px-4 py-3 text-sm text-blue-900">
           <b className="block mb-1">Community Guidelines</b>
           Polls should be designed to gather genuine community feedback on issues that affect your area.
           Polls that are misleading or designed to push a specific agenda may be removed.
         </div>
-        {/* Form Actions */}
+
+            
         <div className="flex space-x-4 pt-4">
           <button type="button" className="bg-gray-100 text-gray-700 px-6 py-3 rounded-md font-semibold border border-gray-200 text-lg hover:bg-gray-200 transition-all" onClick={() => navigate("/admin/dashboard")}>
             Cancel
@@ -221,7 +225,7 @@ export default function PollCreate() {
         </div>
         {message && <div className={messageType === "success" ? "text-green-600 text-lg mt-1" : "text-red-500 text-lg mt-1"}>{message}</div>}
       </form>
-      {/* SAMPLE QUICK FILL BUTTONS */}
+      
       <div className="mt-10 flex flex-col items-center space-y-2">
         <span className="font-bold text-gray-600 mb-2">Try sample polls:</span>
         <button onClick={autofill1} className="px-6 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 font-semibold shadow transition-all">

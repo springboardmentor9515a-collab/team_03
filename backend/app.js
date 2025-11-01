@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
+const pollsRoutes = require('./routes/polls');
 const {protect} =require('./middleware/auth');
 
 const app = express();
@@ -54,6 +55,7 @@ app.use(protect);
 app.use('/api/petitions', petitionRoutes);
 app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/complaints', complaintRoutes);
+app.use('/api/polls', pollsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

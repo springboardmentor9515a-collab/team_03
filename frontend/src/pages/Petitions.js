@@ -38,8 +38,6 @@ function Petitions() {
         });
         const data = await res.json();
         if (data.success) setPetitions(data.data);
-       //if (data.success) setPetitions(data.complaints);
-
       } catch (err) {
         console.error("Error fetching complaints:", err);
       }
@@ -70,7 +68,7 @@ function Petitions() {
   };
 
   const getCategoryColor = (category) => {
-    switch (category.toLowerCase()) {
+    switch (category?.toLowerCase()) {
       case "infrastructure": return "bg-blue-100 text-blue-600";
       case "sanitation": return "bg-yellow-100 text-yellow-600";
       case "utilities": return "bg-purple-100 text-purple-600";
@@ -179,6 +177,15 @@ function Petitions() {
                   {petition.category}
                 </span>
 
+                {/* Show Thumbnail if Image Available */}
+                {petition.imageUrl && (
+                  <img
+                    src={petition.imageUrl}
+                    alt="Petition"
+                    className="w-full h-40 object-cover rounded-lg mt-3"
+                  />
+                )}
+
                 <h3 className="mt-3 text-lg font-bold">{petition.title}</h3>
                 <p className="text-gray-600 text-sm mt-2 line-clamp-3">{petition.description}</p>
 
@@ -188,10 +195,12 @@ function Petitions() {
                 </div>
 
                 <div className="flex justify-between mt-4">
-                  <button onClick={() => navigate(`/petitions/${petition._id}`)} className="border border-blue-600 text-blue-600 px-4 py-1.5 rounded-lg hover:bg-blue-50">
+                  <button
+                    onClick={() => navigate(`/petitions/${petition._id}`, { state: { petition } })}
+                    className="border border-blue-600 text-blue-600 px-4 py-1.5 rounded-lg hover:bg-blue-50"
+                  >
                     View Details
                   </button>
-                  
                 </div>
               </div>
             ))

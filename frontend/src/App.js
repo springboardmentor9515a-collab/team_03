@@ -9,6 +9,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ComplaintCreate from "./pages/ComplaintCreate";
 import Petitions from "./pages/Petitions";
+import PetitionsDetails from "./pages/PetitionsDetails";
+import VolunteerDashboard from "./pages/VolunteerDashbord";
+import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
 import PollCreate from "./pages/PollCreation"; 
 
 function App() {
@@ -24,7 +27,10 @@ function App() {
         <Route path="/ComplaintCreate" element={<ComplaintCreate />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/petitions" element={<Petitions />} />
-        <Route path="/polls/new" element={<PollCreate />} /> 
+        <Route path="/petitions/:id" element={<PetitionsDetails />} />
+        <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
+        <Route path="/polls/new" element={<PollCreate />} />    
       </Routes>
     </BrowserRouter>
   );

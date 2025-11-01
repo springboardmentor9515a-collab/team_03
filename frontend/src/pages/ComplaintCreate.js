@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { useNavigate } from 'react-router-dom';
-import 'leaflet/dist/leaflet.css';
+import React, { useState } from "react";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useNavigate } from "react-router-dom";
+import "leaflet/dist/leaflet.css";
 
 function LocationSelector({ setForm }) {
   useMapEvents({
     click(e) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
-        location: `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`
+        location: `${e.latlng.lat.toFixed(5)},${e.latlng.lng.toFixed(5)}`,
       }));
     },
   });
@@ -17,86 +17,125 @@ function LocationSelector({ setForm }) {
 
 function ComplaintCreate() {
   const [form, setForm] = useState({
-    title: '',
-    category: '',
-    location: '',
-    description: '',
+    title: "",
+    category: "",
+    location: "",
+    description: "",
     photo: null,
-    priority: 'medium'
+    priority: "medium",
   });
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const mapDefault = [12.9716, 77.5946];
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'photo') {
-      setForm(prev => ({ ...prev, photo: files[0] }));
+    if (name === "photo") {
+      setForm((prev) => ({ ...prev, photo: files[0] }));
     } else {
-      setForm(prev => ({ ...prev, [name]: value }));
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = async e => {
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setForm((prev) => ({
+          ...prev,
+          location: `${latitude.toFixed(5)},${longitude.toFixed(5)}`,
+        }));
+      },
+      (err) => {
+        console.error(err);
+        alert("Failed to fetch your location.");
+      }
+    );
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
+    setMessage("");
     setLoading(true);
 
+    // 🧩 Validate location
     if (!form.location) {
-      setMessage('Please select a location.');
+      setMessage("Please select a location.");
       setLoading(false);
       return;
     }
 
-    const locParts = form.location.split(',').map(Number);
+    const locParts = form.location.split(",").map(Number);
     if (locParts.length !== 2 || locParts.some(isNaN)) {
-      setMessage('Invalid location.');
+      setMessage("Invalid location format. Use 'lat,lng'.");
       setLoading(false);
       return;
     }
 
+    // 🧩 Prepare form data
     const formData = new FormData();
-    formData.append('title', form.title.trim());
-    formData.append('description', form.description.trim());
-    formData.append('category', form.category);
-    formData.append('priority', form.priority);
-    formData.append('location[type]', 'Point');
-    formData.append('location[coordinates][]', locParts[1]); // lng
-    formData.append('location[coordinates][]', locParts[0]); // lat
-    if (form.photo) formData.append('photo', form.photo);
+    formData.append("title", form.title.trim());
+    formData.append("description", form.description.trim());
+    formData.append("category", form.category);
+    formData.append("priority", form.priority);
+    formData.append(
+      "location",
+      JSON.stringify({
+        type: "Point",
+        coordinates: [locParts[1], locParts[0]], // [lng, lat]
+      })
+    );
+    if (form.photo) formData.append("photo", form.photo);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
+    const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/complaints`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
+      const res = await fetch(`${API_URL}/api/complaints`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
       const data = await res.json();
-      console.log('Complaint Response:', data);
+      console.log("Complaint Response:", data);
 
-      if (res.ok) {
-        setMessage('Complaint submitted successfully!');
-        setTimeout(() => navigate('/petitions'), 1500);
-        setForm({ title: '', category: '', location: '', description: '', photo: null, priority: 'medium' });
+      if (res.ok && data.success) {
+        setMessage("Complaint submitted successfully!");
+        setTimeout(() => navigate("/petitions"), 1500);
+        setForm({
+          title: "",
+          category: "",
+          location: "",
+          description: "",
+          photo: null,
+          priority: "medium",
+        });
       } else {
-        setMessage(data.error || data.message || 'Submission failed.');
+        setMessage(data.error || data.message || "Submission failed.");
       }
     } catch (err) {
-      console.error(err);
-      setMessage('Submission failed. Network or server error.');
+      console.error("Error submitting complaint:", err);
+      setMessage("Submission failed. Check network or server.");
     } finally {
       setLoading(false);
     }
   };
 
+  // 🧭 Marker position logic
   let markerPos = mapDefault;
   if (form.location) {
-    const parts = form.location.split(',').map(Number);
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) markerPos = parts;
+    const parts = form.location.split(",").map(Number);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      markerPos = parts;
+    }
   }
 
   return (
@@ -145,8 +184,16 @@ function ComplaintCreate() {
               </select>
             </div>
 
+            {/* Location */}
             <div className="flex-1 mt-4 md:mt-0">
               <label className="block mb-2 font-medium">Location</label>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="text-sm text-blue-600 underline mb-1"
+              >
+                Use My Current Location
+              </button>
               <input
                 type="text"
                 name="location"
@@ -186,12 +233,15 @@ function ComplaintCreate() {
             <input type="file" name="photo" accept="image/*" onChange={handleChange} />
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+            className={`px-4 py-2 rounded-md text-white ${
+              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            {loading ? 'Submitting...' : 'Submit Complaint'}
+            {loading ? "Submitting..." : "Submit Complaint"}
           </button>
 
           {message && <div className="text-red-600 font-semibold mt-2">{message}</div>}

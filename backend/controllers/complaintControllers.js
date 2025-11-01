@@ -1,56 +1,27 @@
 const User = require('../SchemaModels/user');
 const Complaint = require('../SchemaModels/complaints');
 const cloudinary = require('../config/cloudinary');
-const streamifier = require('streamifier');
-const multer = require("multer");
-
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.match(/^image\/(jpeg|jpg|png)$/)) {
-      return cb(new Error("Only .jpeg, .jpg and .png formats are allowed!"));
-    }
-    cb(null, true);
-  },
-});
+const { body, param, query } = require('express-validator');
+// const streamifier = require('streamifier');
+// const multer = require("multer");
 
 exports.createComplaint = async (req, res) => {
   try {
-    console.log("Uploaded file:", req.file); // ✅ Debug
-
     let photo_url = null;
 
-    // 1️⃣ Upload image to Cloudinary if file exists
+    // ✅ Upload image to Cloudinary if file exists
     if (req.file) {
-      try {
-        const uploadResult = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "complaints" },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          require("streamifier").createReadStream(req.file.buffer).pipe(stream);
-        });
+      const fileStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
 
-        photo_url = uploadResult.secure_url;
-        console.log("✅ Uploaded to Cloudinary:", photo_url);
-      } catch (cloudErr) {
-        console.error("❌ Cloudinary Upload Error:", cloudErr);
-        return res.status(500).json({
-          success: false,
-          message: "Cloudinary upload failed",
-          error: cloudErr.message,
-        });
-      }
-    } else {
-      console.log("⚠️ No file received from frontend");
+      const uploadResponse = await cloudinary.uploader.upload(fileStr, {
+        folder: "complaints",
+        resource_type: "image",
+      });
+
+      photo_url = uploadResponse.secure_url;
     }
 
-    // 2️⃣ Parse & validate location
+    // ✅ Parse & validate location
     let location = req.body.location;
     if (location && typeof location === "string") {
       try {
@@ -64,24 +35,20 @@ exports.createComplaint = async (req, res) => {
       }
     }
 
-    if (
-      !location ||
-      !Array.isArray(location.coordinates) ||
-      location.coordinates.length !== 2
-    ) {
+    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
       return res.status(400).json({
         success: false,
         message: "Location must include coordinates [longitude, latitude]",
       });
     }
 
-    // 3️⃣ Save complaint
+    // ✅ Save complaint to DB
     const complaint = new Complaint({
       title: req.body.title,
       description: req.body.description,
       category: req.body.category,
       priority: req.body.priority || "medium",
-      photo_url, // ✅ store the Cloudinary image URL
+      photo_url, // ✅ store Cloudinary URL here
       location,
       admin_notes: req.body.admin_notes || "",
       created_by: req.user.id,
@@ -104,6 +71,7 @@ exports.createComplaint = async (req, res) => {
     });
   }
 };
+
 
 
 // Admin - Get All Complaints
