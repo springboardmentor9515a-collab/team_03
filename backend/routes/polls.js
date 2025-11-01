@@ -6,6 +6,7 @@ const preventDoubleVoting = require('../middleware/preventDoubleVoting'); // Cre
 const {
   createPoll,
   getAllPolls,
+  getPollById, 
   submitVote,
   getPollResults
 } = require('../controllers/polls');
@@ -30,6 +31,8 @@ router.post(
   preventDoubleVoting,
   submitVote
 );
+// GET single poll by ID (public)
+router.get('/:id', getPollById);
 
 // GET poll results (public)
 router.get('/:id/results', getPollResults);

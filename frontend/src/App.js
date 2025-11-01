@@ -1,17 +1,22 @@
 import React from "react";
 import "leaflet/dist/leaflet.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+//first milestone pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard"; // citizen dashboard
-import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+//2nd milestone pages
+import AdminDashboard from "./pages/AdminDashboard";
 import ComplaintCreate from "./pages/ComplaintCreate";
 import Petitions from "./pages/Petitions";
 import PetitionsDetails from "./pages/PetitionsDetails";
 import VolunteerDashboard from "./pages/VolunteerDashbord";
 import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
+//3rd milestone pages
+import PollVote from "./pages/PollVote";
+import PollsList from "./pages/PollsList";
 import PollCreate from "./pages/PollCreation"; 
 
 function App() {
@@ -30,6 +35,8 @@ function App() {
         <Route path="/petitions/:id" element={<PetitionsDetails />} />
         <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
+        <Route path="/polls/:id" element={<PollVote />} />
+        <Route path="/polls" element={<PollsList />} />
         <Route path="/polls/new" element={<PollCreate />} />    
       </Routes>
     </BrowserRouter>
