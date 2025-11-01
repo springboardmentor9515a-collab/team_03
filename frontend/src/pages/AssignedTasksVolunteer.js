@@ -154,6 +154,12 @@ function VolunteerAssignedTasks() {
               Assigned Tasks
             </button>
             <button
+              onClick={() => navigate("/polls")}
+              className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium"
+            >
+              Polls
+            </button>
+            <button
               onClick={() => navigate("/volunteer/reports")}
               className="w-full text-left px-4 py-2 rounded hover:bg-sky-50 font-medium"
             >

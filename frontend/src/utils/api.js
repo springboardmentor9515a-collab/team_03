@@ -162,3 +162,91 @@ export async function updateComplaintStatus(id, status) {
   return res.json();
 }
 
+//polling APIs
+// --- POLLS ---
+
+// Get all polls (public or authorized, depending on backend)
+/*export async function getAllPolls() {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+// Create a new poll (for admin/official)
+export async function createPoll(pollData) {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(pollData),
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+ // Vote on a poll (for citizen)
+export async function submitVote(pollId, selected_option) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/vote`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ selected_option }),
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+// Get poll results
+export async function getPollResults(pollId) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/results`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}*/
+
+
+
+// Get all polls (public)
+export async function getAllPolls() {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+// Create a new poll (admin/official only)
+export async function createPoll(pollData) {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(pollData),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+//  Submit a vote (citizen only)
+export async function submitVote(pollId, selected_option) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/vote`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ selected_option }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+// Get poll results (public)
+export async function getPollResults(pollId) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/results`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
