@@ -2,11 +2,11 @@
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-// ✅ Helper for Authorization header
+
 function getAuthHeaders(isFormData = false) {
   const token = localStorage.getItem("token");
   if (isFormData) {
-    // ⚠️ Do NOT manually set "Content-Type" when sending FormData
+    
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
   return token
@@ -39,7 +39,7 @@ export async function getProfile() {
     method: "GET",
     headers: getAuthHeaders(),
   });
-  return res.json();
+  return { ok: res.ok, data: await res.json() };
 }
 
 export async function logoutUser() {
@@ -82,12 +82,6 @@ export async function createComplaint({ title, description, category, priority, 
   return { ok: res.ok, ...data };
 }
 
-/*export async function getMyComplaints() {
-  const res = await fetch(`${API_URL}/api/complaints?created_by=me`, {
-    headers: getAuthHeaders(),
-  });
-  return { ok: res.ok, data: await res.json() };
-}*/
 
 export async function getMyComplaints() {
   const res = await fetch(`${API_URL}/api/complaints/me`, {
@@ -151,7 +145,7 @@ export async function getAssignedComplaints() {
 export async function updateComplaintStatus(id, status) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/complaints/${id}/status`, {
-    method: "PUT", // ✅ Must be PUT, not PATCH
+    method: "PUT", 
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -249,4 +243,61 @@ export async function getPollResults(pollId) {
   });
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, data };
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+// Poll API call --------------------------------------------------------------------
+
+export async function createPoll({ title, options, target_location, description, closeDate }) {
+  try {
+    const res = await fetch(`${API_URL}/api/polls`, {  
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + getToken()
+      },
+      body: JSON.stringify({ title, options, target_location, description, closeDate })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Poll creation failed");
+    }
+
+    return { ok: true, data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+// Poll API call --------------------------------------------------------------------
+
+export async function createPoll({ title, options, target_location, description, closeDate }) {
+  try {
+    const res = await fetch(`${API_URL}/api/polls`, {  
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + getToken()
+      },
+      body: JSON.stringify({ title, options, target_location, description, closeDate })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Poll creation failed");
+    }
+
+    return { ok: true, data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }

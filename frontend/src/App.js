@@ -17,6 +17,7 @@ import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
 //3rd milestone pages
 import PollVote from "./pages/PollVote";
 import PollsList from "./pages/PollsList";
+import PollCreate from "./pages/PollCreation"; 
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
         <Route path="/polls/:id" element={<PollVote />} />
         <Route path="/polls" element={<PollsList />} />
+        <Route path="/polls/new" element={<PollCreate />} />    
       </Routes>
     </BrowserRouter>
   );
