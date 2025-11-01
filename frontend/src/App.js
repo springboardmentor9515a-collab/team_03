@@ -12,6 +12,7 @@ import Petitions from "./pages/Petitions";
 import PetitionsDetails from "./pages/PetitionsDetails";
 import VolunteerDashboard from "./pages/VolunteerDashbord";
 import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
+import PollCreate from "./pages/PollCreation"; 
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/petitions/:id" element={<PetitionsDetails />} />
         <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
+        <Route path="/polls/new" element={<PollCreate />} />    
       </Routes>
     </BrowserRouter>
   );
