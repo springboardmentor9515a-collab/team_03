@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import "../App.css";
 
 function ForgotPassword() {
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");

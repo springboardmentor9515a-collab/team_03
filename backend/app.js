@@ -1,20 +1,32 @@
-
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
-require('dotenv').config();
 
+const cloudinary = require('./config/cloudinary');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
-const petitionRoutes = require('./routes/petitions');
+//const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
-const pollRoutes = require('./routes/polls');
+const complaintRoutes = require('./routes/complaintRoutes');
+const pollsRoutes = require('./routes/polls');
+const {protect} =require('./middleware/auth');
 
 const app = express();
 
 // Connect to database
 connectDB();
+
+// Test Cloudinary connection (runs once on startup)
+(async () => {
+  try {
+    const res = await cloudinary.api.ping();
+    console.log('Cloudinary Connected:', res.status); // should log "ok"
+  } catch (err) {
+    console.error('Cloudinary connection failed:', err.message);
+  }
+})();
 
 // CORS configuration
 const corsOptions = {
@@ -36,9 +48,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/petitions', petitionRoutes);
-app.use('/api/volunteers', volunteerRoutes);
-app.use('/api/polls', pollRoutes);
+
+// Public Routes (no authentication required)
+app.use('/api/complaints', complaintRoutes);
+
+// Protected Routes (require authentication)
+app.use('/api/volunteers', protect, volunteerRoutes);
+app.use('/api/polls', protect, pollsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -83,6 +99,10 @@ const PORT = process.env.PORT || 5000;
 
 
 app.listen(PORT, () => {
-  console.log(`Authentication server running on port ${PORT}`);
-  console.log(`Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+  (async () => {
+    console.log(`Authentication server running on port ${PORT}`);
+    await mongoose.connection.asPromise();
+    const dbState = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+    console.log(`Database: ${dbState}`);
+  })();
 });
