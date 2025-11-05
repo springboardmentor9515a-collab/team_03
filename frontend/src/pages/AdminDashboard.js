@@ -1,9 +1,36 @@
 
-
-
-
 import React, { useEffect, useState } from "react";
-import { getAllComplaints, getVolunteers, assignVolunteer } from "../utils/api";
+import {
+  getAllComplaints,
+  getVolunteers,
+  assignVolunteer,
+  getProfile,
+} from "../utils/api";
+import { useNavigate } from "react-router-dom";
+import "./AdminDashboard.css";
+
+// PROFILE CARD
+function AdminProfile({ profile }) {
+  if (!profile) return <div className="profile-card-centered">Loading...</div>;
+  const user = profile.user || {};
+  return (
+    <div className="profile-card-centered">
+      <div className="profile-avatar">
+        {user.name ? user.name[0].toUpperCase() : "?"}
+      </div>
+      <div className="profile-info">
+        <div className="profile-name"><h1>{user.name || "No Name"}</h1></div>
+        <div className="profile-role">admin</div>
+        <div className="profile-location">
+          <span role="img" aria-label="location">📍</span>{" "}
+          {user.location || "Location not set"}
+        </div>
+        <div className="profile-email">{user.email || "No email"}</div>
+        <div className="profile-id">ID: {user.id || "N/A"}</div>
+      </div>
+    </div>
+  );
+}
 
 function uniqueComplaints(arr) {
   const map = new Map();
@@ -20,22 +47,11 @@ function volunteerDisplay(v) {
       ? v.name
       : v.email
       ? v.email
-      : v._id
-      ? v._id.toString()
+      : v.id
+      ? v.id.toString()
       : JSON.stringify(v);
   }
   return v.toString();
-}
-
-function LocationName({ location }) {
-  if (!location) return <span>N/A</span>;
-  if (location.city) {
-    return <span>{location.address ? `${location.address}, ` : ""}{location.city}{location.state ? `, ${location.state}` : ""}</span>;
-  }
-  if (location.address) return <span>{location.address}</span>;
-  if (location.coordinates && location.coordinates.length === 2)
-    return <span>{location.coordinates[1]}, {location.coordinates[0]}</span>;
-  return <span>{typeof location === "string" ? location : "N/A"}</span>;
 }
 
 function getStatusLabel(c) {
@@ -46,30 +62,56 @@ function getStatusLabel(c) {
   return c.status ? c.status[0].toUpperCase() + c.status.slice(1) : "-";
 }
 
-function AdminDashboard() {
+function LocationName({ location }) {
+  if (!location) return <span>N/A</span>;
+  if (location.city) {
+    return (
+      <span>
+        {location.address ? `${location.address}, ` : ""}
+        {location.city}
+        {location.state ? `, ${location.state}` : ""}
+      </span>
+    );
+  }
+  if (location.address) return <span>{location.address}</span>;
+  if (location.coordinates && location.coordinates.length === 2)
+    return <span>{location.coordinates[1]}, {location.coordinates[0]}</span>;
+  return <span>{typeof location === "string" ? location : "N/A"}</span>;
+}
+
+export default function AdminDashboard() {
+  const [profile, setProfile] = useState(null);
   const [complaints, setComplaints] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [filters, setFilters] = useState({ category: "", status: "", location: "" });
   const [loading, setLoading] = useState(true);
   const [assigningId, setAssigningId] = useState(null);
   const [selectState, setSelectState] = useState({});
-  // Added for pagination:
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10); // You can allow user to choose, or hardcode.
+  const [limit, setLimit] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
+  const navigate = useNavigate();
 
-  async function fetchData(currPage = 1, currLimit = 10) {
+  async function fetchData(currPage = 1, currLimit = 5) {
     setLoading(true);
     const complaintsRes = await getAllComplaints(`?page=${currPage}&limit=${currLimit}`);
     const volunteersRes = await getVolunteers();
     setComplaints(uniqueComplaints(complaintsRes.data?.data || []));
     setVolunteers(volunteersRes.data || []);
-    // Set total pages from backend meta:
     setTotalPages(complaintsRes.data?.pagination?.totalPages || 1);
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(page, limit); }, [page, limit]);
+  useEffect(() => {
+    fetchData(page, limit);
+  }, [page, limit]);
+
+  useEffect(() => {
+    getProfile().then(res => {
+      if (res.ok) setProfile(res.data);
+      else setProfile(null);
+    });
+  }, []);
 
   function complaintMatchesStatus(c) {
     if (!filters.status) return true;
@@ -114,7 +156,7 @@ function AdminDashboard() {
     setAssigningId(complaintId);
     const res = await assignVolunteer(complaintId, volunteerId);
     if (res.ok) {
-      await fetchData(page, limit); // always reload to ensure backend truth
+      await fetchData(page, limit);
       setSelectState(s => ({ ...s, [complaintId]: "" }));
     } else {
       let msg = "Assignment failed";
@@ -144,63 +186,86 @@ function AdminDashboard() {
     setLoading(false);
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
+
   return (
-    <div className="page-container">
-      <h2 className="dashboard-title">Complaints Dashboard</h2>
-      <div className="dashboard-filters">
-        <select value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
-          <option value="">All Categories</option>
-          {[...new Set(complaints.map(c => c.category))].map(c => c && <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}>
-          {statusChoices.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="Location"
-          value={filters.location}
-          onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
-          className="civix-location-input"
-        />
-        
-        <button onClick={handleLoadAll} style={{ marginLeft: 12 }}>Load All</button>
-      </div>
-      {loading ? (
-        <p>Loading complaints...</p>
-      ) : filteredComplaints.length === 0 ? (
-        <div className="dashboard-placeholder">No complaints found.</div>
-      ) : (
-        <div>
-          
-          <div className="pagination-controls" style={{ marginBottom: 12 }}>
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
-            <span style={{ margin: "0 8px" }}>Page {page} of {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</button>
-           
-            <span style={{ marginLeft: 16 }}>
-              Show{" "}
-              <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}>
-                {[5, 10, 20, 50].map(sz => <option key={sz} value={sz}>{sz}</option>)}
-              </select>
-              {" "}per page
-            </span>
-          </div>
-          <div className="civix-table-container">
-            <table className="civix-complaints-table">
-              <thead>
+    <div className="admin-main-container">
+      <aside className="admin-sidebar">
+        <AdminProfile profile={profile} />
+        <nav className="custom-admin-nav">
+          <div className="admin-nav-link active">Dashboard</div>
+          <div className="admin-nav-link" onClick={() => navigate("/polls/new")}>Create Poll</div>
+          <div className="admin-nav-link" onClick={() => navigate("/polls")}>Polls</div>
+          <div className="admin-nav-link">Community</div>
+        </nav>
+        <div className="admin-logout-btn" onClick={handleLogout}>
+          Logout
+        </div>
+      </aside>
+      <div className="admin-content">
+        <span className="dashboard-title">CIVIX</span>
+        <h2 className="dashboard-title">Complaints Dashboard</h2>
+        <div className="dashboard-filters">
+          <select
+            value={filters.category}
+            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+            className="dashboard-filter-input"
+          >
+            <option value="">All Categories</option>
+            {[...new Set(complaints.map((c) => c.category))]
+              .filter(Boolean)
+              .map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select
+            value={filters.status}
+            onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+            className="dashboard-filter-input"
+          >
+            {statusChoices.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Location"
+            value={filters.location}
+            onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+            className="dashboard-filter-input"
+          />
+          <button className="dashboard-filter-btn" onClick={handleLoadAll}>Load All</button>
+        </div>
+        <div className="civix-table-container">
+          <table className="civix-complaints-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Location</th>
+                <th>Assignment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
                 <tr>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Location</th>
-                  <th>Assignment</th>
+                  <td colSpan={6} className="dashboard-placeholder">
+                    Loading complaints...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredComplaints.map(c => (
+              ) : filteredComplaints.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="dashboard-placeholder">
+                    No complaints found.
+                  </td>
+                </tr>
+              ) : (
+                filteredComplaints.map(c => (
                   <tr key={c._id}>
                     <td>{c.title}</td>
                     <td>{c.description}</td>
@@ -214,7 +279,11 @@ function AdminDashboard() {
                     <td>
                       {c.assigned_to ? (
                         <span style={{ color: "#045", fontWeight: 600 }}>
-                          Assigned to: {volunteerDisplay(c.assigned_to)}
+                          Assigned to: {volunteerDisplay(
+                            typeof c.assigned_to === "object"
+                              ? c.assigned_to
+                              : volunteers.find(v => v.id === c.assigned_to)
+                          )}
                         </span>
                       ) : (
                         <div style={{ display: "flex", alignItems: "center" }}>
@@ -227,8 +296,8 @@ function AdminDashboard() {
                             <option value="">Assign Volunteer</option>
                             {volunteers.map(v => (
                               <option
-                                key={v._id}
-                                value={v._id}
+                                key={v.id}
+                                value={v.id}
                               >
                                 {volunteerDisplay(v)}
                               </option>
@@ -246,14 +315,53 @@ function AdminDashboard() {
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+        {/* Page navigation at the BOTTOM of the page */}
+        <div className="dashboard-pages-bottom">
+          <button
+            className="page-btn"
+            onClick={() => setPage(1)}
+            disabled={page === 1}
+          >First</button>
+          <button
+            className="page-btn"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >Prev</button>
+          <span style={{ margin: "0 8px" }}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            className="page-btn"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >Next</button>
+          <button
+            className="page-btn"
+            onClick={() => setPage(totalPages)}
+            disabled={page === totalPages}
+          >Last</button>
+          <span style={{ marginLeft: 16 }}>
+            Show{" "}
+            <select
+              value={limit}
+              onChange={e => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {[5, 10, 20, 50].map(sz => (
+                <option key={sz} value={sz}>{sz}</option>
+              ))}
+            </select>
+            {" "}per page
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
-
-export default AdminDashboard;

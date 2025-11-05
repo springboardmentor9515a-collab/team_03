@@ -46,8 +46,7 @@ router.post(
   validateRequest,
   complaintController.createComplaint
 );
-
-module.exports = router;
+//module.exports = router;
 
 
 //GET /complaints - Admin fetches all complaints
