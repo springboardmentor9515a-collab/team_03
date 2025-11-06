@@ -214,3 +214,13 @@ export async function createPollWithAuth({ title, options, target_location, desc
     return { ok: false, error: err.message };
   }
 }
+
+
+
+export async function getAdminProfile() {
+  const res = await fetch(`${API_URL}/api/auth/profile`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return { ok: res.ok, data: await res.json() };
+}
