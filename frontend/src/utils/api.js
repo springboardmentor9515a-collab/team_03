@@ -39,7 +39,7 @@ export async function getProfile() {
     method: "GET",
     headers: getAuthHeaders(),
   });
-  return { ok: res.ok, data: await res.json() };
+  return res.json();
 }
 
 export async function logoutUser() {
@@ -213,4 +213,14 @@ export async function createPoll({ title, options, target_location, description,
   } catch (err) {
     return { ok: false, error: err.message };
   }
+}
+
+
+
+export async function getAdminProfile() {
+  const res = await fetch(`${API_URL}/api/auth/profile`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return { ok: res.ok, data: await res.json() };
 }
