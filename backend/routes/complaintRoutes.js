@@ -167,4 +167,8 @@ router.put(
   complaintController.respondComplaint
 );
 
-module.exports = router;
+// -----------------------------------------------------------------------------
+// Sentiment endpoints for complaints (Yes/No/Maybe)
+// POST /complaints/:id/sentiment  (authenticated citizens)
+// GET  /complaints/:id/sentiment  (public aggregation)
+// -----------------------------------------------------------------------------
