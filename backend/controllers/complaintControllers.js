@@ -329,3 +329,127 @@ exports.getMyComplaints = async (req, res) => {
     });
   }
 };
+
+exports.getLocalComplaints = async (req, res) => {
+  try {
+    const { status, category } = req.query;
+
+    // Ensure official/admin has a location
+    if (!req.user.location) {
+      return res.status(400).json({
+        success: false,
+        message: "Your profile has no assigned location.",
+      });
+    }
+
+    const filter = {
+      "location.area": req.user.location.area, // Example field; adjust to your schema
+    };
+
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+
+    const complaints = await Complaint.find(filter)
+      .populate("created_by", "name email role")
+      .populate("assigned_to", "name email role")
+      .sort("-createdAt");
+
+    res.status(200).json({
+      success: true,
+      data: complaints,
+      count: complaints.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch local complaints",
+      error: error.message,
+    });
+  }
+};
+
+exports.volunteerUpdateComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { progressNote } = req.body;
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Ensure only assigned volunteer can update
+    if (
+      !complaint.assigned_to ||
+      complaint.assigned_to.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this complaint",
+      });
+    }
+
+    complaint.progress_notes = complaint.progress_notes || [];
+    complaint.progress_notes.push({
+      note: progressNote,
+      updated_by: req.user.id,
+      updated_at: new Date(),
+    });
+
+    await complaint.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Progress note added successfully",
+      data: complaint,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to add progress note",
+      error: error.message,
+    });
+  }
+};
+
+exports.respondComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { finalComment, close } = req.body;
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    complaint.final_comment = finalComment;
+    complaint.responded_by = req.user.id;
+
+    if (close) {
+      complaint.status = "resolved";
+      complaint.closed_at = new Date();
+    }
+
+    await complaint.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Response added successfully",
+      data: complaint,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to respond to complaint",
+      error: error.message,
+    });
+  }
+};
+
+
