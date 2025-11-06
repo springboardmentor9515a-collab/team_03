@@ -4,7 +4,7 @@ import {
   getAllComplaints,
   getVolunteers,
   assignVolunteer,
-  getProfile,
+  getAdminProfile,
 } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
   }, [page, limit]);
 
   useEffect(() => {
-    getProfile().then(res => {
+    getAdminProfile().then(res => {
       if (res.ok) setProfile(res.data);
       else setProfile(null);
     });
