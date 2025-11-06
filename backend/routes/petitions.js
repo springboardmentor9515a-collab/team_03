@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
-const Petition = require('../SchemaModels/petition');
+const Petition = require('../SchemaModels/complaints');
 const User = require('../SchemaModels/user');
 const { auth } = require('../middleware/auth');
 const emailService = require('../utils/emailService');
@@ -33,7 +33,6 @@ router.post('/', [
     description,
     category,
     location,
-    status: 'received'
   });
 
   // Populate creator details for email
@@ -104,7 +103,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
 // PUT /api/petitions/:id/status
 router.put('/:id/status', [
   auth,
-  body('status').isIn(['received', 'in_review', 'resolved']).withMessage('Status must be received, in_review, or resolved')
+  body('status').isIn(['received', 'in_review', 'resolved']).withMessage('Status must be received, in_review, or resolved'),
+  body('note').optional().isString().trim().isLength({ max: 2000 }).withMessage('Note must be a string up to 2000 chars')
 ], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -114,8 +114,8 @@ router.put('/:id/status', [
     });
   }
 
-  const { status } = req.body;
-  const petition = await Petition.findById(req.params.id).populate('creator', 'name email');
+  const { status, note } = req.body;
+  let petition = await Petition.findById(req.params.id).populate('creator', 'name email');
 
   if (!petition) {
     return res.status(404).json({
@@ -124,8 +124,33 @@ router.put('/:id/status', [
     });
   }
 
+  // Authorization: allow admins and officials, or the volunteer assigned to this petition
+  const isAdminOrOfficial = req.user.role === 'admin' || req.user.role === 'official';
+  const isAssignedVolunteer = petition.assignedVolunteer && petition.assignedVolunteer.toString() === req.user.id;
+
+  if (!isAdminOrOfficial && !isAssignedVolunteer) {
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to update petition status'
+    });
+  }
+
+  // Update status and append a note/update entry
   petition.status = status;
+  petition.updates = petition.updates || [];
+  petition.updates.push({
+    author: req.user.id,
+    role: req.user.role,
+    note: note || undefined,
+    status,
+    createdAt: new Date()
+  });
+
   await petition.save();
+  // re-populate updates' author for response
+  petition = await Petition.findById(req.params.id)
+    .populate('creator', 'name email')
+    .populate('updates.author', 'name email');
 
   // Send status update email to petition creator
   try {

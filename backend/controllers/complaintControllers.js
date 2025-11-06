@@ -328,3 +328,78 @@ exports.getMyComplaints = async (req, res) => {
     });
   }
 };
+
+// -----------------------------------------------------------------------------
+// Sentiment submission and aggregation (Yes/No/Maybe)
+// -----------------------------------------------------------------------------
+const ComplaintVote = require('../SchemaModels/complaintVotes');
+const cache = require('../utils/cache');
+
+// Submit sentiment for a complaint/petition
+exports.submitSentiment = async (req, res) => {
+  try {
+    const complaintId = req.params.id;
+    const userId = req.user.id;
+    const { sentiment } = req.body;
+
+    const allowed = ['Yes', 'No', 'Maybe'];
+    if (!allowed.includes(sentiment)) {
+      return res.status(400).json({ success: false, message: `Invalid sentiment. Allowed: ${allowed.join(', ')}` });
+    }
+
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+
+    const vote = new ComplaintVote({ complaint_id: complaintId, user_id: userId, sentiment });
+    await vote.save();
+
+    // Invalidate cached results for this complaint
+    try { cache.del(`petitionResults:${complaintId}`); } catch (e) { /* noop */ }
+
+    res.status(201).json({ success: true, message: 'Sentiment submitted successfully' });
+  } catch (error) {
+    if (error && error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'You have already submitted sentiment for this petition' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to submit sentiment', error: error.message });
+  }
+};
+
+// Get aggregated sentiment results for a complaint/petition
+exports.getSentimentResults = async (req, res) => {
+  try {
+    const complaintId = req.params.id;
+    const cacheKey = `petitionResults:${complaintId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.status(200).json(cached);
+
+    // Aggregate sentiments
+    const mongoose = require('mongoose');
+    const results = await ComplaintVote.aggregate([
+      { $match: { complaint_id: new mongoose.Types.ObjectId(complaintId) } },
+      { $group: { _id: '$sentiment', count: { $sum: 1 } } }
+    ]);
+
+    const formatted = {};
+    let total = 0;
+    results.forEach(r => { formatted[r._id] = r.count; total += r.count; });
+
+    // Ensure keys for graphs
+    const options = ['Yes', 'No', 'Maybe'];
+    options.forEach(opt => { if (!formatted[opt]) formatted[opt] = 0; });
+
+    const percentages = {};
+    options.forEach(opt => {
+      percentages[opt] = total ? parseFloat(((formatted[opt] / total) * 100).toFixed(2)) : 0;
+    });
+
+    const response = { complaintId, results: formatted, total, percentages };
+    cache.set(cacheKey, response);
+
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch sentiment results', error: error.message });
+  }
+};
