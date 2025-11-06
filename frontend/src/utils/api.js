@@ -52,7 +52,6 @@ export async function logoutUser() {
 
 // --- COMPLAINTS ---
 
-//  FIXED createComplaint
 export async function createComplaint({ title, description, category, priority, location, photo }) {
   const formData = new FormData();
   formData.append("title", title);
@@ -61,7 +60,7 @@ export async function createComplaint({ title, description, category, priority, 
   if (priority) formData.append("priority", priority);
 
   if (location) {
-    const [lat, lng] = location.split(',').map(Number);
+    const [lat, lng] = location.split(",").map(Number);
     formData.append("location[type]", "Point");
     formData.append("location[coordinates][]", lng);
     formData.append("location[coordinates][]", lat);
@@ -72,7 +71,7 @@ export async function createComplaint({ title, description, category, priority, 
   }
 
   const token = localStorage.getItem("token");
-  const res = await fetch(`${process.env.REACT_APP_API_URL}/api/complaints`, {
+  const res = await fetch(`${API_URL}/api/complaints`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -82,13 +81,6 @@ export async function createComplaint({ title, description, category, priority, 
   return { ok: res.ok, ...data };
 }
 
-/*export async function getMyComplaints() {
-  const res = await fetch(`${API_URL}/api/complaints?created_by=me`, {
-    headers: getAuthHeaders(),
-  });
-  return { ok: res.ok, data: await res.json() };
-}*/
-
 export async function getMyComplaints() {
   const res = await fetch(`${API_URL}/api/complaints/me`, {
     method: "GET",
@@ -97,7 +89,6 @@ export async function getMyComplaints() {
   const data = await res.json();
   return { ok: res.ok, data };
 }
-
 
 export async function getAllComplaints(query = "") {
   const res = await fetch(`${API_URL}/api/complaints${query}`, {
@@ -110,27 +101,22 @@ export async function assignVolunteer(complaintId, volunteerId) {
   if (!volunteerId || typeof volunteerId !== "string" || volunteerId.length !== 24) {
     return {
       ok: false,
-      data: { error: "Invalid volunteer ID: must be a valid MongoDB ObjectId string." }
+      data: { error: "Invalid volunteer ID: must be a valid MongoDB ObjectId string." },
     };
   }
+
   try {
     const res = await fetch(`${API_URL}/api/complaints/${complaintId}/assign`, {
       method: "PUT",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ volunteer_id: volunteerId })
+      body: JSON.stringify({ volunteer_id: volunteerId }),
     });
-    let data;
-    try {
-      data = await res.json();
-    } catch {
-      data = { error: "Response is not valid JSON" };
-    }
+    const data = await res.json().catch(() => ({ error: "Response not valid JSON" }));
     return { ok: res.ok, data };
   } catch (e) {
     return { ok: false, data: { error: e.message || "Network error" } };
   }
 }
-
 
 export async function getVolunteers() {
   const res = await fetch(`${API_URL}/api/auth/volunteers`, {
@@ -147,11 +133,10 @@ export async function getAssignedComplaints() {
   return { ok: res.ok, data: await res.json() };
 }
 
-
 export async function updateComplaintStatus(id, status) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/complaints/${id}/status`, {
-    method: "PUT", // ✅ Must be PUT, not PATCH
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -162,3 +147,80 @@ export async function updateComplaintStatus(id, status) {
   return res.json();
 }
 
+// --- POLLS ---
+
+export async function getAllPolls() {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+export async function createPoll(pollData) {
+  const res = await fetch(`${API_URL}/api/polls`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(pollData),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+export async function submitVote(pollId, selected_option) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/vote`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ selected_option }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+export async function getPollResults(pollId) {
+  const res = await fetch(`${API_URL}/api/polls/${pollId}/results`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+// Helper for poll creation
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+export async function createPollWithAuth({ title, options, target_location, description, closeDate }) {
+  try {
+    const res = await fetch(`${API_URL}/api/polls`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ title, options, target_location, description, closeDate }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Poll creation failed");
+    }
+
+    return { ok: true, data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+
+
+export async function getAdminProfile() {
+  const res = await fetch(`${API_URL}/api/auth/profile`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  return { ok: res.ok, data: await res.json() };
+}

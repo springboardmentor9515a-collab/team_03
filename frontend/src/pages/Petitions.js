@@ -116,7 +116,6 @@ function Petitions() {
             <button onClick={() => navigate("/dashboard")} className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium text-blue-600">Dashboard</button>
             <button className="w-full text-left px-4 py-2 rounded bg-blue-600 text-white font-medium">Petitions</button>
             <button onClick={() => navigate("/polls")} className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium">Polls</button>
-            <button onClick={() => navigate("/officials")} className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium">Officials</button>
             <button onClick={() => navigate("/reports")} className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium">Reports</button>
             <button onClick={() => navigate("/settings")} className="w-full text-left px-4 py-2 rounded hover:bg-blue-50 font-medium">Settings</button>
           </nav>

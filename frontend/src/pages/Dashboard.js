@@ -149,7 +149,7 @@ function Dashboard() {
       <main className="flex-1 p-6 relative">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Dashboard</h2>
+            <h2 className="text-2xl font-bold"> Citizen Dashboard</h2>
             <p className="text-gray-600">View your complaints and activity overview.</p>
           </div>
 

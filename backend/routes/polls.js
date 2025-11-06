@@ -41,21 +41,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get a specific poll
-router.get('/:id', async (req, res) => {
-  try {
-    const poll = await Poll.findById(req.params.id).populate('created_by', 'name email');
-    
-    if (!poll) {
-      return res.status(404).json({ success: false, message: 'Poll not found' });
-    }
-    
-    res.json({ success: true, data: poll });
-  } catch (error) {
-    console.error('Error fetching poll:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+// Citizen submits a vote (protected, one vote per poll)
+router.post(
+  '/:id/vote',
+  auth,
+  authorize('citizen'),      
+  preventDoubleVoting,
+  submitVote
+);
+// GET single poll by ID (public)
+router.get('/:id', getPollById);
 
 // Vote on a poll
 router.post('/:id/vote', auth, async (req, res) => {
