@@ -329,77 +329,126 @@ exports.getMyComplaints = async (req, res) => {
   }
 };
 
-// -----------------------------------------------------------------------------
-// Sentiment submission and aggregation (Yes/No/Maybe)
-// -----------------------------------------------------------------------------
-const ComplaintVote = require('../SchemaModels/complaintVotes');
-const cache = require('../utils/cache');
-
-// Submit sentiment for a complaint/petition
-exports.submitSentiment = async (req, res) => {
+exports.getLocalComplaints = async (req, res) => {
   try {
-    const complaintId = req.params.id;
-    const userId = req.user.id;
-    const { sentiment } = req.body;
+    const { status, category } = req.query;
 
-    const allowed = ['Yes', 'No', 'Maybe'];
-    if (!allowed.includes(sentiment)) {
-      return res.status(400).json({ success: false, message: `Invalid sentiment. Allowed: ${allowed.join(', ')}` });
+    // Ensure official/admin has a location
+    if (!req.user.location) {
+      return res.status(400).json({
+        success: false,
+        message: "Your profile has no assigned location.",
+      });
     }
 
-    const complaint = await Complaint.findById(complaintId);
-    if (!complaint) {
-      return res.status(404).json({ success: false, message: 'Complaint not found' });
-    }
+    const filter = {
+      "location.area": req.user.location.area, // Example field; adjust to your schema
+    };
 
-    const vote = new ComplaintVote({ complaint_id: complaintId, user_id: userId, sentiment });
-    await vote.save();
+    if (status) filter.status = status;
+    if (category) filter.category = category;
 
-    // Invalidate cached results for this complaint
-    try { cache.del(`petitionResults:${complaintId}`); } catch (e) { /* noop */ }
+    const complaints = await Complaint.find(filter)
+      .populate("created_by", "name email role")
+      .populate("assigned_to", "name email role")
+      .sort("-createdAt");
 
-    res.status(201).json({ success: true, message: 'Sentiment submitted successfully' });
+    res.status(200).json({
+      success: true,
+      data: complaints,
+      count: complaints.length,
+    });
   } catch (error) {
-    if (error && error.code === 11000) {
-      return res.status(409).json({ success: false, message: 'You have already submitted sentiment for this petition' });
-    }
-    res.status(500).json({ success: false, message: 'Failed to submit sentiment', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch local complaints",
+      error: error.message,
+    });
   }
 };
 
-// Get aggregated sentiment results for a complaint/petition
-exports.getSentimentResults = async (req, res) => {
+exports.volunteerUpdateComplaint = async (req, res) => {
   try {
-    const complaintId = req.params.id;
-    const cacheKey = `petitionResults:${complaintId}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return res.status(200).json(cached);
+    const { id } = req.params;
+    const { progressNote } = req.body;
 
-    // Aggregate sentiments
-    const mongoose = require('mongoose');
-    const results = await ComplaintVote.aggregate([
-      { $match: { complaint_id: new mongoose.Types.ObjectId(complaintId) } },
-      { $group: { _id: '$sentiment', count: { $sum: 1 } } }
-    ]);
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
 
-    const formatted = {};
-    let total = 0;
-    results.forEach(r => { formatted[r._id] = r.count; total += r.count; });
+    // Ensure only assigned volunteer can update
+    if (
+      !complaint.assigned_to ||
+      complaint.assigned_to.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not assigned to this complaint",
+      });
+    }
 
-    // Ensure keys for graphs
-    const options = ['Yes', 'No', 'Maybe'];
-    options.forEach(opt => { if (!formatted[opt]) formatted[opt] = 0; });
-
-    const percentages = {};
-    options.forEach(opt => {
-      percentages[opt] = total ? parseFloat(((formatted[opt] / total) * 100).toFixed(2)) : 0;
+    complaint.progress_notes = complaint.progress_notes || [];
+    complaint.progress_notes.push({
+      note: progressNote,
+      updated_by: req.user.id,
+      updated_at: new Date(),
     });
 
-    const response = { complaintId, results: formatted, total, percentages };
-    cache.set(cacheKey, response);
+    await complaint.save();
 
-    res.status(200).json(response);
+    res.status(200).json({
+      success: true,
+      message: "Progress note added successfully",
+      data: complaint,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch sentiment results', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to add progress note",
+      error: error.message,
+    });
   }
 };
+
+exports.respondComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { finalComment, close } = req.body;
+
+    const complaint = await Complaint.findById(id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    complaint.final_comment = finalComment;
+    complaint.responded_by = req.user.id;
+
+    if (close) {
+      complaint.status = "resolved";
+      complaint.closed_at = new Date();
+    }
+
+    await complaint.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Response added successfully",
+      data: complaint,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to respond to complaint",
+      error: error.message,
+    });
+  }
+};
+
+

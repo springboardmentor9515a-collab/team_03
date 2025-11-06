@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
 const pollsRoutes = require('./routes/polls');
+const reportsRoutes = require('./routes/reports');
 const {protect} =require('./middleware/auth');
 
 const app = express();
@@ -51,10 +52,8 @@ app.use('/api/auth', authRoutes);
 
 // Public Routes (no authentication required)
 app.use('/api/complaints', complaintRoutes);
-
-// Protected Routes (require authentication)
-app.use('/api/volunteers', protect, volunteerRoutes);
-app.use('/api/polls', protect, pollsRoutes);
+app.use('/api/polls', pollsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
