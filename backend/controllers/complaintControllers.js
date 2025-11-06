@@ -9,17 +9,19 @@ exports.createComplaint = async (req, res) => {
   try {
     let photo_url = null;
 
-    // Upload image to Cloudinary if file exists
+    // ✅ Upload image to Cloudinary if file exists
     if (req.file) {
-    // For Cloudinary: convert buffer to base64 string
-    const fileStr = `data:${
-      req.file.mimetype
-    };base64,${req.file.buffer.toString("base64")}`;
-    const upload = await uploadImage(fileStr);
-    photo_url = upload.secure_url;
-  }
+      const fileStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
 
-    // 2️⃣ Parse & validate location
+      const uploadResponse = await cloudinary.uploader.upload(fileStr, {
+        folder: "complaints",
+        resource_type: "image",
+      });
+
+      photo_url = uploadResponse.secure_url;
+    }
+
+    // ✅ Parse & validate location
     let location = req.body.location;
     if (location && typeof location === "string") {
       try {
@@ -33,24 +35,20 @@ exports.createComplaint = async (req, res) => {
       }
     }
 
-    if (
-      !location ||
-      !Array.isArray(location.coordinates) ||
-      location.coordinates.length !== 2
-    ) {
+    if (!location || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
       return res.status(400).json({
         success: false,
         message: "Location must include coordinates [longitude, latitude]",
       });
     }
 
-    // 3️⃣ Save complaint
+    // ✅ Save complaint to DB
     const complaint = new Complaint({
       title: req.body.title,
       description: req.body.description,
       category: req.body.category,
       priority: req.body.priority || "medium",
-      photo_url, // ✅ store the Cloudinary image URL
+      photo_url, // ✅ store Cloudinary URL here
       location,
       admin_notes: req.body.admin_notes || "",
       created_by: req.user.id,
@@ -73,6 +71,7 @@ exports.createComplaint = async (req, res) => {
     });
   }
 };
+
 
 
 // Admin - Get All Complaints
