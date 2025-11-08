@@ -6,6 +6,7 @@ frontend/node_modules/
 backend/node_modules/
 frontend/package-lock.json
 backend/package-lock.json
+package-lock.json
 
 # Logs
 logs/
@@ -95,4 +96,5 @@ frontend/.idea/
 # Local backups or debug dumps
 backend/debug/
 backend/test_data/
+
 
