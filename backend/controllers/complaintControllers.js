@@ -1,27 +1,26 @@
 const User = require('../SchemaModels/user');
 const Complaint = require('../SchemaModels/complaints');
 const cloudinary = require('../config/cloudinary');
-const { body, param, query } = require('express-validator');
-// const streamifier = require('streamifier');
-// const multer = require("multer");
+const Notification = require('../SchemaModels/notification');
 
+// -----------------------------------------------------------------------------
+// Citizen - Create Complaint
+// -----------------------------------------------------------------------------
 exports.createComplaint = async (req, res) => {
   try {
     let photo_url = null;
 
-    // ✅ Upload image to Cloudinary if file exists
+    // ✅ Upload image to Cloudinary if provided
     if (req.file) {
       const fileStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-
       const uploadResponse = await cloudinary.uploader.upload(fileStr, {
         folder: "complaints",
         resource_type: "image",
       });
-
       photo_url = uploadResponse.secure_url;
     }
 
-    // ✅ Parse & validate location
+    // ✅ Validate & parse location
     let location = req.body.location;
     if (location && typeof location === "string") {
       try {
@@ -48,7 +47,7 @@ exports.createComplaint = async (req, res) => {
       description: req.body.description,
       category: req.body.category,
       priority: req.body.priority || "medium",
-      photo_url, // ✅ store Cloudinary URL here
+      photo_url,
       location,
       admin_notes: req.body.admin_notes || "",
       created_by: req.user.id,
@@ -56,6 +55,17 @@ exports.createComplaint = async (req, res) => {
 
     await complaint.save();
     await complaint.populate("created_by", "name email role");
+
+    // ✅ Notify Admins
+    const admins = await User.find({ role: 'admin' }).select('_id');
+    for (const admin of admins) {
+      await Notification.create({
+        user: admin._id,
+        title: 'New Complaint Submitted',
+        message: `A new complaint "${complaint.title}" has been submitted by ${req.user.name}.`,
+        link: `/complaints/${complaint._id}`,
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -72,9 +82,9 @@ exports.createComplaint = async (req, res) => {
   }
 };
 
-
-
-// Admin - Get All Complaints
+// -----------------------------------------------------------------------------
+// Admin - Get All Complaints (with pagination & filters)
+// -----------------------------------------------------------------------------
 exports.getAllComplaints = async (req, res) => {
   try {
     const {
@@ -133,31 +143,40 @@ exports.assignComplaint = async (req, res) => {
 
     const volunteer = await User.findById(volunteer_id);
     if (!volunteer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Volunteer not found',
-      });
+      return res.status(404).json({ success: false, message: 'Volunteer not found' });
     }
 
     if (volunteer.role !== 'volunteer') {
       return res.status(400).json({
         success: false,
-        message: 'User must have volunteer role',
-        error: `User role is '${volunteer.role}'`,
+        message: `User must have volunteer role, but found '${volunteer.role}'`,
       });
     }
 
     const complaint = await Complaint.findById(id);
     if (!complaint) {
-      return res.status(404).json({
-        success: false,
-        message: 'Complaint not found',
-      });
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
     }
 
     complaint.assigned_to = volunteer_id;
-    complaint.status = 'in_review';
+    complaint.status = 'assigned';
     await complaint.save();
+
+    // ✅ Notify volunteer
+    await Notification.create({
+      user: volunteer_id,
+      title: 'Complaint Assigned',
+      message: `You have been assigned complaint "${complaint.title}".`,
+      link: `/complaints/${complaint._id}`,
+    });
+
+    // ✅ Notify citizen who created it
+    await Notification.create({
+      user: complaint.created_by,
+      title: 'Complaint Update',
+      message: `Your complaint "${complaint.title}" has been assigned to a volunteer.`,
+      link: `/complaints/${complaint._id}`,
+    });
 
     await complaint.populate([
       { path: 'created_by', select: 'name email role' },
@@ -179,7 +198,7 @@ exports.assignComplaint = async (req, res) => {
 };
 
 // -----------------------------------------------------------------------------
-// Volunteer - Get Assigned Complaints
+// Volunteer - Get My Assigned Complaints
 // -----------------------------------------------------------------------------
 exports.getMyAssignedComplaints = async (req, res) => {
   try {
@@ -232,7 +251,7 @@ exports.updateComplaintStatus = async (req, res) => {
     const { id } = req.params;
     const { status, admin_notes } = req.body;
 
-    const allowedStatuses = ['received', 'in_review', 'resolved'];
+    const allowedStatuses = ['active', 'assigned', 'under_review', 'responded', 'closed'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -242,28 +261,20 @@ exports.updateComplaintStatus = async (req, res) => {
 
     const complaint = await Complaint.findById(id);
     if (!complaint) {
-      return res.status(404).json({
-        success: false,
-        message: 'Complaint not found',
-      });
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
     }
 
-    if (req.user.role === 'volunteer') {
-      if (
-        !complaint.assigned_to ||
-        complaint.assigned_to.toString() !== req.user.id
-      ) {
-        return res.status(403).json({
-          success: false,
-          message: 'You can only update complaints assigned to you',
-          error: 'Not authorized to update this complaint',
-        });
-      }
+    // ✅ Volunteers can update only their assigned complaints
+    if (req.user.role === 'volunteer' && complaint.assigned_to?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only update complaints assigned to you',
+      });
     }
 
     complaint.status = status;
     if (admin_notes) complaint.admin_notes = admin_notes;
-    if (status === 'resolved' && !complaint.resolved_at) {
+    if (status === 'closed' && !complaint.resolved_at) {
       complaint.resolved_at = new Date();
     }
 
@@ -273,6 +284,14 @@ exports.updateComplaintStatus = async (req, res) => {
       { path: 'created_by', select: 'name email role' },
       { path: 'assigned_to', select: 'name email role' },
     ]);
+
+    // ✅ Send notifications
+    await Notification.create({
+      user: complaint.created_by,
+      title: 'Complaint Updated',
+      message: `Your complaint "${complaint.title}" is now marked as ${status}.`,
+      link: `/complaints/${complaint._id}`,
+    });
 
     res.status(200).json({
       success: true,
@@ -293,8 +312,7 @@ exports.updateComplaintStatus = async (req, res) => {
 // -----------------------------------------------------------------------------
 exports.getMyComplaints = async (req, res) => {
   try {
-    const { status, category, page = 1, limit = 10, sort = '-createdAt' } =
-      req.query;
+    const { status, category, page = 1, limit = 10, sort = '-createdAt' } = req.query;
 
     const filter = { created_by: req.user.id };
     if (status) filter.status = status;
