@@ -40,6 +40,21 @@ exports.getAllPolls = async (req, res) => {
     res.status(500).json({ message: 'Error fetching polls', error: error.message });
   }
 };
+// GET single poll by ID (public)
+exports.getPollById = async (req, res) => {
+  try {
+    const poll = await Poll.findById(req.params.id);
+
+    if (!poll) {
+      return res.status(404).json({ message: "Poll not found" });
+    }
+
+    res.status(200).json({ data: poll });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching poll", error: error.message });
+  }
+};
+
 
 exports.submitVote = async (req, res) => {
   try {
@@ -89,3 +104,4 @@ exports.getPollResults = async (req, res) => {
     res.status(500).json({ message: "Error fetching poll results", error: error.message });
   }
 };
+

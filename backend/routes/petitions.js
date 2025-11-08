@@ -232,4 +232,29 @@ router.delete('/:id', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Petition deleted successfully' });
 }));
 
+// Petition filter route
+router.get('/filter', auth, async (req, res) => {
+  try {
+    const { startDate, endDate, location, category, status, title } = req.query;
+    const filter = {};
+
+    if (startDate && endDate) {
+      filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+    if (location) filter.location = { $regex: location, $options: 'i' };
+    if (category) filter.category = { $regex: category, $options: 'i' };
+    if (status) filter.status = status;
+    if (title) filter.title = { $regex: title, $options: 'i' };
+
+    const petitions = await Petition.find(filter)
+      .populate('creator', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: petitions.length, petitions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error filtering petitions', error: error.message });
+  }
+});
+
+
 module.exports = router;

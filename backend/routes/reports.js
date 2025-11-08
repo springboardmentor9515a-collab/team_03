@@ -1,41 +1,87 @@
 const express = require('express');
 const router = express.Router();
+const { Parser } = require('json2csv');
+const PDFDocument = require('pdfkit');
 const Petition = require('../SchemaModels/petition');
-const { Parser } = require('json2csv'); // npm i json2csv
+const Complaint = require('../SchemaModels/complaints');
 
+// -----------------------------------------------------------------------------
+// Combined Engagement Report (JSON)
+// -----------------------------------------------------------------------------
 router.get('/engagement', async (req, res) => {
   try {
-    // Aggregate petitions per month, status, etc.
-    const report = await Petition.aggregate([
-      {
-        $group: {
-          _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
-          total: { $sum: 1 },
-          active: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
-          closed: { $sum: { $cond: [{ $eq: ["$status", "closed"] }, 1, 0] } },
-        }
-      },
-      { $sort: { "_id.year": -1, "_id.month": -1 } }
+    const petitionStats = await Petition.aggregate([
+      { $group: { _id: '$status', total: { $sum: 1 } } }
     ]);
-    res.json({ report });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to generate report' });
+    const complaintStats = await Complaint.aggregate([
+      { $group: { _id: '$status', total: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      success: true,
+      petitions: petitionStats,
+      complaints: complaintStats
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to generate report', error: error.message });
   }
 });
 
-router.get('/export', async (req, res) => {
+// -----------------------------------------------------------------------------
+// Export Report as CSV
+// -----------------------------------------------------------------------------
+router.get('/export/csv', async (req, res) => {
   try {
-    const petitions = await Petition.find({});
-    const fields = ['title', 'category', 'location', 'status', 'createdAt'];
+    const petitions = await Petition.find().select('title category location status createdAt');
+    const complaints = await Complaint.find().select('title category location status createdAt');
+
+    const fields = ['type', 'title', 'category', 'status', 'location', 'createdAt'];
+    const combined = [
+      ...petitions.map(p => ({ type: 'Petition', ...p.toObject() })),
+      ...complaints.map(c => ({ type: 'Complaint', ...c.toObject() }))
+    ];
+
     const parser = new Parser({ fields });
-    const csv = parser.parse(petitions);
+    const csv = parser.parse(combined);
 
     res.header('Content-Type', 'text/csv');
-    res.attachment('petitions_report.csv');
-    return res.send(csv);
-    // For PDF: Use pdfkit or similar npm module for custom export
-  } catch (err) {
-    res.status(500).json({ error: 'Export failed' });
+    res.attachment('civic_engagement_report.csv');
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'CSV export failed', error: error.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// Export Report as PDF
+// -----------------------------------------------------------------------------
+router.get('/export/pdf', async (req, res) => {
+  try {
+    const petitions = await Petition.find().select('title category location status createdAt');
+    const complaints = await Complaint.find().select('title category location status createdAt');
+
+    const doc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="civic_engagement_report.pdf"');
+    doc.pipe(res);
+
+    doc.fontSize(20).text('Civic Engagement Report', { align: 'center' });
+    doc.moveDown(1.5);
+
+    doc.fontSize(14).text('📜 Petitions', { underline: true });
+    petitions.forEach(p => {
+      doc.fontSize(12).text(`• ${p.title} (${p.status}) — ${p.category} — ${p.location}`);
+    });
+
+    doc.moveDown(1);
+    doc.fontSize(14).text('🧾 Complaints', { underline: true });
+    complaints.forEach(c => {
+      doc.fontSize(12).text(`• ${c.title} (${c.status}) — ${c.category} — ${c.location?.city || 'N/A'}`);
+    });
+
+    doc.end();
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'PDF export failed', error: error.message });
   }
 });
 
