@@ -7,7 +7,7 @@ const cors = require('cors');
 const cloudinary = require('./config/cloudinary');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
-const petitionRoutes = require('./routes/petitions');
+//const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
 const pollsRoutes = require('./routes/polls');
@@ -50,9 +50,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 
-//To protect the all routes below this with JWT
-app.use(protect);
-
+// Public Routes (no authentication required)
 app.use('/api/petitions', petitionRoutes);
 app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/complaints', complaintRoutes);

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
-const Petition = require('../SchemaModels/petition');
+const Petition = require('../SchemaModels/complaints');
 const User = require('../SchemaModels/user');
 const { auth } = require('../middleware/auth');
 const emailService = require('../utils/emailService');
@@ -52,6 +52,10 @@ router.post('/assign', [
 
   // Send assignment notification email to volunteer
   try {
+    // persist assignment on petition
+    petition.assignedVolunteer = volunteer._id;
+    await petition.save();
+
     await emailService.sendVolunteerAssignmentEmail({
       to: volunteer.email,
       volunteerName: volunteer.name,
@@ -62,7 +66,7 @@ router.post('/assign', [
 
     res.json({
       success: true,
-      message: 'Volunteer assigned successfully and notification email sent',
+      message: 'Volunteer assigned successfully, assignment persisted and notification email sent',
       volunteer: {
         id: volunteer._id,
         name: volunteer.name,
@@ -70,7 +74,8 @@ router.post('/assign', [
       },
       petition: {
         id: petition._id,
-        title: petition.title
+        title: petition.title,
+        assignedVolunteer: petition.assignedVolunteer
       }
     });
   } catch (emailError) {
@@ -101,6 +106,24 @@ router.get('/', auth, asyncHandler(async (req, res) => {
     success: true,
     count: volunteers.length,
     volunteers
+  });
+}));
+
+// Get complaints/petitions assigned to the logged-in volunteer
+// GET /api/volunteers/me/complaints
+router.get('/me/complaints', auth, asyncHandler(async (req, res) => {
+  // Only allow actual volunteers (citizen role) to fetch their assigned complaints
+  // Admins may also query if desired, but keep the check simple: any authenticated user can fetch their assigned items
+
+  const petitions = await Petition.find({ assignedVolunteer: req.user.id })
+    .populate('creator', 'name email')
+    .populate('assignedVolunteer', 'name email')
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    count: petitions.length,
+    complaints: petitions
   });
 }));
 

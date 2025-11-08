@@ -277,5 +277,26 @@ router.get('/filter', auth, async (req, res) => {
   }
 });
 
+// -----------------------------------------------------------------------------
+// Sentiment endpoints for complaints (Yes/No/Maybe)
+// POST /complaints/:id/sentiment  (authenticated citizens)
+// GET  /complaints/:id/sentiment  (public aggregation)
+// -----------------------------------------------------------------------------
+router.post(
+  '/:id/sentiment',
+  auth,
+  requireCitizen,
+  [ body('sentiment').isIn(['Yes','No','Maybe']).withMessage('Sentiment must be Yes, No, or Maybe') ],
+  validateRequest,
+  complaintController.submitSentiment
+);
+
+router.get('/:id/sentiment', complaintController.getSentimentResults);
 
 module.exports = router;
+
+// -----------------------------------------------------------------------------
+// Sentiment endpoints for complaints (Yes/No/Maybe)
+// POST /complaints/:id/sentiment  (authenticated citizens)
+// GET  /complaints/:id/sentiment  (public aggregation)
+// -----------------------------------------------------------------------------

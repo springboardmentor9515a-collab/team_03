@@ -14,10 +14,7 @@ import Petitions from "./pages/Petitions";
 import PetitionsDetails from "./pages/PetitionsDetails";
 import VolunteerDashboard from "./pages/VolunteerDashbord";
 import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
-//3rd milestone pages
-import PollVote from "./pages/PollVote";
-import PollsList from "./pages/PollsList";
-import PollCreate from "./pages/PollCreation"; 
+import SentimentDashboard from "./pages/SentimentDashboard";
 
 function App() {
   return (
@@ -33,6 +30,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/petitions" element={<Petitions />} />
         <Route path="/petitions/:id" element={<PetitionsDetails />} />
+        <Route path="/complaints/:id/sentiment" element={<SentimentDashboard />} />
         <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
         <Route path="/polls/:id" element={<PollVote />} />
