@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "json2csv": "^6.0.0-alpha.2",
-    "moment": "^2.30.1",
-    "pdfkit": "^0.17.2",
-    "streamifier": "^0.1.1"
-  }
-}
