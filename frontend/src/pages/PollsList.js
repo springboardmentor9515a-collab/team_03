@@ -31,9 +31,16 @@ function PollsList() {
       setLoading(true);
       try {
         const { ok, data } = await getAllPolls();
-        if (ok) setPolls(data);
-        else setError(data.message || "Failed to load polls");
-      } catch {
+        if (ok) {
+          // Backend returns { success: true, data: polls[] }
+          // Extract the actual polls array
+          const pollsArray = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+          setPolls(pollsArray);
+        } else {
+          setError(data?.message || data?.error || "Failed to load polls");
+        }
+      } catch (err) {
+        console.error("Error fetching polls:", err);
         setError("Error connecting to the server");
       } finally {
         setLoading(false);
@@ -41,7 +48,6 @@ function PollsList() {
     };
     fetchPolls();
   }, []);
-  console.log("Polls:", polls);
 
 
   // 📍 Get user's current location
@@ -81,7 +87,8 @@ function PollsList() {
   };
 
   // 🧩 Filter polls by category and location (including nearby)
-  const filteredPolls = polls.filter((poll) => {
+  // Ensure polls is always an array before filtering
+  const filteredPolls = Array.isArray(polls) ? polls.filter((poll) => {
     const matchCategory = categoryFilter ? poll.category === categoryFilter : true;
     let matchLocation = true;
 
@@ -96,7 +103,7 @@ function PollsList() {
     }
 
     return matchCategory && matchLocation;
-  });
+  }) : [];
 
   // 🔘 Handle vote navigation (only for citizens)
   const handleVoteClick = (pollId) => {
@@ -180,7 +187,7 @@ function PollsList() {
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-200 focus:outline-none"
           >
             <option value="">All Locations</option>
-            {[...new Set(polls.map((p) => p.target_location))].map((loc) => (
+            {Array.isArray(polls) && [...new Set(polls.map((p) => p.target_location).filter(Boolean))].map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
               </option>
@@ -240,12 +247,20 @@ function PollsList() {
                   Created on: {new Date(poll.createdAt).toLocaleDateString()}
                 </p>
 
-                <button
-                  onClick={() => handleVoteClick(poll._id)}
-                  className="border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 hover:text-white transition w-full"
-                >
-                  Vote Now
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleVoteClick(poll._id)}
+                    className="flex-1 border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 hover:text-white transition"
+                  >
+                    Vote Now
+                  </button>
+                  <button
+                    onClick={() => navigate(`/polls/${poll._id}/sentiment`)}
+                    className="flex-1 border border-green-600 text-green-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 hover:text-white transition"
+                  >
+                    View Results
+                  </button>
+                </div>
               </div>
             ))}
           </div>

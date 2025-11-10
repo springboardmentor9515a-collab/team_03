@@ -51,11 +51,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 
 // Public Routes (no authentication required)
-app.use('/api/petitions', petitionRoutes);
-app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/complaints', complaintRoutes);
-app.use('/api/polls', pollsRoutes);
+app.use('/api/polls', pollsRoutes); // Polls routes handle auth individually
 app.use('/api/reports', reportsRoutes);
+
+// Protected Routes (require authentication)
+app.use('/api/volunteers', protect, volunteerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
