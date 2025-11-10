@@ -1,5 +1,24 @@
 const mongoose = require('mongoose');
 
+const statusValues = ['active', 'assigned', 'under_review', 'responded', 'closed'];
+
+const statusHistorySchema = new mongoose.Schema({
+  status: {
+    type: String,
+    enum: statusValues,
+    required: true
+  },
+  changedAt: {
+    type: Date,
+    default: Date.now
+  },
+  changedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  notes: { type: String, trim: true, maxlength: 500 }
+}, { _id: false });
+
 const complaintSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true, minlength: 5, maxlength: 200 },
@@ -12,14 +31,14 @@ const complaintSchema = new mongoose.Schema(
         'electricity','roads','waste_management','other'
       ]
     },
-    photo_url: { type: String, trim: true},
+    photo_url: { type: String, trim: true },
     location: {
       type: {
         type: String,
         enum: ['Point'],
         default: 'Point'
       },
-      coordinates: { 
+      coordinates: {
         type: [Number], // [longitude, latitude]
         required: true
       },
@@ -30,15 +49,16 @@ const complaintSchema = new mongoose.Schema(
     },
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    status: { type: String, enum: ['received','in_review','resolved'], default: 'received' },
+    status: { type: String, enum: statusValues, default: 'active' },
     priority: { type: String, enum: ['low','medium','high','urgent'], default: 'medium' },
     resolved_at: { type: Date, default: null },
-    admin_notes: { type: String, maxlength: 500 }
+    admin_notes: { type: String, maxlength: 500 },
+    official_response: { type: String, trim: true, maxlength: 2000, default: '' },
+    status_history: { type: [statusHistorySchema], default: [] }
   },
   { timestamps: true }
 );
 
-// Indexes
 complaintSchema.index({ location: '2dsphere' });
 complaintSchema.index({ category: 1 });
 complaintSchema.index({ status: 1 });
