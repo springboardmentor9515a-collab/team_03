@@ -51,10 +51,10 @@ app.use('/api/auth', authRoutes);
 
 // Public Routes (no authentication required)
 app.use('/api/complaints', complaintRoutes);
+app.use('/api/polls', pollsRoutes); // Polls routes handle auth individually
 
 // Protected Routes (require authentication)
 app.use('/api/volunteers', protect, volunteerRoutes);
-app.use('/api/polls', protect, pollsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
