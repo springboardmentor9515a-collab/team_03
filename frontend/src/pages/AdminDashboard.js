@@ -199,7 +199,7 @@ export default function AdminDashboard() {
           <div className="admin-nav-link active">Dashboard</div>
           <div className="admin-nav-link" onClick={() => navigate("/polls/new")}>Create Poll</div>
           <div className="admin-nav-link" onClick={() => navigate("/polls")}>Polls</div>
-          <div className="admin-nav-link">Community</div>
+          <div className="admin-nav-link" onClick={() => navigate("/reports/dashboard")}>Reports</div>
         </nav>
         <div className="admin-logout-btn" onClick={handleLogout}>
           Logout

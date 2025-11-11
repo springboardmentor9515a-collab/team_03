@@ -224,3 +224,81 @@ export async function getAdminProfile() {
   });
   return { ok: res.ok, data: await res.json() };
 }
+
+// -----------------------------------------------------------------------------
+// 🧾 ENGAGEMENT REPORTS (JSON, CSV, PDF)
+// -----------------------------------------------------------------------------
+export async function getEngagementReport() {
+  const res = await fetch(`${API_URL}/api/reports/engagement`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+export function downloadEngagementCSV() {
+  const token = localStorage.getItem("token");
+  fetch(`${API_URL}/api/reports/export/csv`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => res.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "civic_engagement_report.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    })
+    .catch((err) => console.error("CSV download failed:", err));
+}
+
+export function downloadEngagementPDF() {
+  const token = localStorage.getItem("token");
+  fetch(`${API_URL}/api/reports/export/pdf`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => res.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "civic_engagement_report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    })
+    .catch((err) => console.error("PDF download failed:", err));
+}
+
+// -----------------------------------------------------------------------------
+// 💬 COMPLAINT SENTIMENT (Yes/No/Maybe)
+// -----------------------------------------------------------------------------
+export async function submitComplaintSentiment(id, sentiment) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/api/complaints/${id}/sentiment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ sentiment }),
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+export async function getComplaintSentimentResults(id) {
+  const res = await fetch(`${API_URL}/api/complaints/${id}/sentiment`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, data };
+}

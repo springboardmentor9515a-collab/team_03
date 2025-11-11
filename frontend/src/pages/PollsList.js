@@ -139,7 +139,7 @@ function PollsList() {
       {/* Navigation */}
       <nav className="flex-1 space-y-2">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/complaints/:id/sentiment")}
           className="w-full text-left px-4 py-2 rounded-md hover:bg-blue-50 font-medium text-blue-600 transition"
         >
           Results

@@ -14,7 +14,14 @@ import Petitions from "./pages/Petitions";
 import PetitionsDetails from "./pages/PetitionsDetails";
 import VolunteerDashboard from "./pages/VolunteerDashbord";
 import AssignedTasksVolunteer from "./pages/AssignedTasksVolunteer";
+//3rd milestone pages
+import PollVote from "./pages/PollVote";
+import PollsList from "./pages/PollsList";
+import PollCreation from "./pages/PollCreation";
 import SentimentDashboard from "./pages/SentimentDashboard";
+//4th milestone pages
+import ReportsDashboard from "./pages/ReportDashboard";
+
 
 function App() {
   return (
@@ -35,7 +42,10 @@ function App() {
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
         <Route path="/polls/:id" element={<PollVote />} />
         <Route path="/polls" element={<PollsList />} />
-        <Route path="/polls/new" element={<PollCreate />} />    
+        <Route path="/polls/new" element={<PollCreation />} />  
+        <Route path="/reports/dashboard" element={<ReportsDashboard />} />  
+      
+
       </Routes>
     </BrowserRouter>
   );
