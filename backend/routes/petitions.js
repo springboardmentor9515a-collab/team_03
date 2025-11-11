@@ -1,8 +1,9 @@
+
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
-const Petition = require('../SchemaModels/complaints');
+const Petition = require('../SchemaModels/petition');
 const User = require('../SchemaModels/user');
 const {
   auth,
@@ -192,18 +193,6 @@ router.put('/:id/status', [
   const petition = await Petition.findById(req.params.id).populate('creator', 'name email');
   if (!petition) return res.status(404).json({ success: false, error: 'Petition not found' });
 
-  // Authorization: allow admins and officials, or the volunteer assigned to this petition
-  const isAdminOrOfficial = req.user.role === 'admin' || req.user.role === 'official';
-  const isAssignedVolunteer = petition.assignedVolunteer && petition.assignedVolunteer.toString() === req.user.id;
-
-  if (!isAdminOrOfficial && !isAssignedVolunteer) {
-    return res.status(403).json({
-      success: false,
-      error: 'Not authorized to update petition status'
-    });
-  }
-
-  // Update status and append a note/update entry
   petition.status = status;
   petition.status_history.push({
     status: status,
@@ -211,10 +200,6 @@ router.put('/:id/status', [
     changedBy: req.user._id
   });
   await petition.save();
-  // re-populate updates' author for response
-  petition = await Petition.findById(req.params.id)
-    .populate('creator', 'name email')
-    .populate('updates.author', 'name email');
 
   try {
     await emailService.sendStatusUpdateEmail({

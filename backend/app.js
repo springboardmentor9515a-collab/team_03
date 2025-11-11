@@ -7,10 +7,11 @@ const cors = require('cors');
 const cloudinary = require('./config/cloudinary');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
-//const petitionRoutes = require('./routes/petitions');
+const petitionRoutes = require('./routes/petitions');
 const volunteerRoutes = require('./routes/volunteers');
 const complaintRoutes = require('./routes/complaintRoutes');
 const pollsRoutes = require('./routes/polls');
+
 const reportsRoutes = require('./routes/reports');
 const {protect} =require('./middleware/auth');
 
@@ -49,11 +50,17 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-
-// Public Routes (no authentication required)
-app.use('/api/complaints', complaintRoutes);
-app.use('/api/polls', pollsRoutes); // Polls routes handle auth individually
 app.use('/api/reports', reportsRoutes);
+
+//To protect the all routes below this with JWT
+app.use(protect);
+
+app.use('/api/petitions', petitionRoutes);
+app.use('/api/volunteers', volunteerRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/polls', pollsRoutes);
+
+
 
 // Protected Routes (require authentication)
 app.use('/api/volunteers', protect, volunteerRoutes);
