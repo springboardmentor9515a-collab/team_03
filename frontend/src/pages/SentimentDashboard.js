@@ -17,12 +17,32 @@ const SentimentDashboard = () => {
 
   const fetchResults = async () => {
     try {
-      // API is mounted under /api/complaints in backend
-      const response = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/complaints/${id}/sentiment`);
-      setResults(response.data);
+      // Determine if this is a poll or complaint based on the URL path
+      const isPoll = window.location.pathname.includes('/polls/');
+      const apiEndpoint = isPoll 
+        ? `${process.env.REACT_APP_API_URL || ''}/api/polls/${id}/sentiment`
+        : `${process.env.REACT_APP_API_URL || ''}/api/complaints/${id}/sentiment`;
+
+      const response = await axios.get(apiEndpoint);
+      
+      // Handle both complaint and poll response formats
+      let responseData;
+      if (response.data.success) {
+        // Poll format: { success: true, results: {...}, percentages: {...}, total: ... }
+        responseData = {
+          results: response.data.results,
+          percentages: response.data.percentages,
+          total: response.data.total
+        };
+      } else {
+        // Complaint format: { results: {...}, percentages: {...}, total: ... }
+        responseData = response.data;
+      }
+      
+      setResults(responseData);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Error fetching results');
       console.error('Error fetching results:', err);
     } finally {
       setLoading(false);
@@ -41,11 +61,24 @@ const SentimentDashboard = () => {
   if (!results) return null;
 
   // Format data for charts
-  const chartData = Object.entries(results.results).map(([name, value]) => ({
+  const chartData = Object.entries(results.results || {}).map(([name, value]) => ({
     name,
     value,
-    percentage: results.percentages[name]
+    percentage: results.percentages?.[name] || 0
   }));
+
+  // Handle empty results
+  if (chartData.length === 0 || results.total === 0) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6">Sentiment Results</h2>
+        <div className="bg-white p-8 rounded-lg shadow text-center">
+          <p className="text-gray-600 text-lg">No votes have been cast yet.</p>
+          <p className="text-gray-500 text-sm mt-2">Results will appear here once votes are submitted.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -55,9 +88,9 @@ const SentimentDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Total Votes</h3>
-          <p className="text-3xl">{results.total}</p>
+          <p className="text-3xl">{results.total || 0}</p>
         </div>
-        {Object.entries(results.percentages).map(([key, value]) => (
+        {Object.entries(results.percentages || {}).map(([key, value]) => (
           <div key={key} className="bg-white p-4 rounded-lg shadow">
             <h3 className="text-lg font-semibold mb-2">{key}</h3>
             <p className="text-3xl">{value}%</p>

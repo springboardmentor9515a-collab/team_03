@@ -62,6 +62,9 @@ app.use('/api/polls', pollsRoutes);
 
 
 
+// Protected Routes (require authentication)
+app.use('/api/volunteers', protect, volunteerRoutes);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 

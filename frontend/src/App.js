@@ -40,6 +40,8 @@ function App() {
         <Route path="/complaints/:id/sentiment" element={<SentimentDashboard />} />
         <Route path="/volunteer/dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer/assigned-tasks" element={<AssignedTasksVolunteer />} />
+        <Route path="/polls/new" element={<PollCreation />} />
+        <Route path="/polls/:id/sentiment" element={<SentimentDashboard />} />
         <Route path="/polls/:id" element={<PollVote />} />
         <Route path="/polls" element={<PollsList />} />
         <Route path="/polls/new" element={<PollCreation />} />  
