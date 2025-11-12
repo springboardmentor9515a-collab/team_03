@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { auth, authorize } = require('../middleware/auth');
 const validatePollData = require('../middleware/validatePoll');      // Create this middleware (see prior steps)
-const preventDoubleVoting = require('../middleware/preventDoubleVoting'); // Create this middleware (see prior steps)
+const preventDoubleVoting = require('../middleware/preventDoubleVoting');
+const { getPollSentiment } = require('../controllers/polls');  // Create this middleware (see prior steps)
 const {
   createPoll,
   getAllPolls,
@@ -36,5 +37,8 @@ router.get('/:id', getPollById);
 
 // GET poll results (public)
 router.get('/:id/results', getPollResults);
+ 
+//results 
+router.get('/:id/sentiment', getPollSentiment);
 
 module.exports = router;

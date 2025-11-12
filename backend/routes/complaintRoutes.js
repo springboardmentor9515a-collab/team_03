@@ -1,6 +1,9 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const { validateRequest } = require('../middleware/validateRequest');
+const asyncHandler = require('express-async-handler');
+const Complaint = require('../SchemaModels/complaints');  // ✅ Required
+const Petition = require('../SchemaModels/petition'); 
 // const upload = require('../middleware/upload');
 const {
   auth,
@@ -108,23 +111,55 @@ router.get(
   complaintController.getMyAssignedComplaints
 );
 
-//PUT /complaints/:id/status - Volunteer updates status of assigned complaints
-router.put(
-  '/:id/status',
-  auth,
-  requireVolunteer,    
-  [
-    param('id').isMongoId().withMessage('Invalid complaint ID'),
-    body('status')
-      .notEmpty().withMessage('Status is required')
-      .isIn(['received','in_review','resolved']).withMessage('Invalid status'),
-    body('admin_notes')
-      .optional()
-      .isLength({ max: 500 }).withMessage('Admin notes max 500 characters')
-  ],
-  validateRequest,          
-  complaintController.updateComplaintStatus
-);
+router.put('/:id/status', auth, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status, userRole } = req.body;
+
+  if (!status) {
+    return res.status(400).json({ success: false, message: 'Status is required' });
+  }
+
+  const complaint = await Complaint.findById(id);
+  if (!complaint) {
+    return res.status(404).json({ success: false, message: 'Complaint not found' });
+  }
+
+  // 🔒 Authorization checks
+ if (req.user.role === 'volunteer') {
+  const userId = req.user._id || req.user.id; // ✅ handles both token formats
+  if (!complaint.assigned_to || complaint.assigned_to.toString() !== userId.toString()) {
+    return res.status(403).json({ success: false, message: 'You are not assigned to this complaint' });
+  }
+}
+
+
+  // ✅ Update status + history
+  complaint.status = status;
+  complaint.status_history.push({
+    status,
+    changedBy: req.user._id,
+    notes: `${userRole || req.user.role} updated status to ${status}`,
+    changedAt: new Date(),
+  });
+
+  if (status === 'resolved') {
+    complaint.resolved_at = new Date();
+  }
+
+  await complaint.save().catch((err) => {
+    console.error('❌ MongoDB save error:', err);
+    throw err;
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Status updated successfully',
+    complaint,
+  });
+}));
+
+
+
 
 // Citizen fetches their own complaints
 router.get(
@@ -292,6 +327,8 @@ router.post(
 );
 
 router.get('/:id/sentiment', complaintController.getSentimentResults);
+
+
 
 module.exports = router;
 

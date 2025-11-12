@@ -4,7 +4,7 @@ import {
   getProfile,
   getAssignedComplaints,
   logoutUser,
-  updateComplaintStatus, // 👈 added
+  updateComplaintStatus,
 } from "../utils/api";
 
 function VolunteerDashboard() {
@@ -49,7 +49,7 @@ function VolunteerDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "received":
+      case "active":
         return "text-green-600";
       case "in_review":
         return "text-yellow-600";

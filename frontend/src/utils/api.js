@@ -133,19 +133,30 @@ export async function getAssignedComplaints() {
   return { ok: res.ok, data: await res.json() };
 }
 
-export async function updateComplaintStatus(id, status) {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/api/complaints/${id}/status`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ status }),
-  });
+export const updateComplaintStatus = async (id, status) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/complaints/${id}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        status,
+        userRole: "volunteer",
+      }),
+    });
 
-  return res.json();
-}
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  } catch (err) {
+    console.error("Error updating complaint status:", err);
+    return { success: false, message: err.message };
+  }
+};
+
+
 
 // --- POLLS ---
 

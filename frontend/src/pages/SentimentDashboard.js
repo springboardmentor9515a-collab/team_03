@@ -15,7 +15,7 @@ const SentimentDashboard = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchResults = async () => {
+ /* const fetchResults = async () => {
     try {
       // Determine if this is a poll or complaint based on the URL path
       const isPoll = window.location.pathname.includes('/polls/');
@@ -47,7 +47,43 @@ const SentimentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };*/
+  const fetchResults = async () => {
+  try {
+    const isPoll = window.location.pathname.includes('/polls/');
+    const apiEndpoint = isPoll 
+      ? `${process.env.REACT_APP_API_URL || ''}/api/polls/${id}/sentiment`
+      : `${process.env.REACT_APP_API_URL || ''}/api/complaints/${id}/sentiment`;
+
+    const token = localStorage.getItem("token"); // ✅ Fetch token from local storage
+
+    const response = await axios.get(apiEndpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`, // ✅ Include token
+      },
+    });
+
+    let responseData;
+    if (response.data.success) {
+      responseData = {
+        results: response.data.results,
+        percentages: response.data.percentages,
+        total: response.data.total,
+      };
+    } else {
+      responseData = response.data;
+    }
+
+    setResults(responseData);
+    setError(null);
+  } catch (err) {
+    setError(err.response?.data?.message || err.message || 'Error fetching results');
+    console.error('Error fetching results:', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchResults();
