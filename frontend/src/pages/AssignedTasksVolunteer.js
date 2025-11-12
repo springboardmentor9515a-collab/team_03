@@ -4,7 +4,7 @@ import {
   getProfile,
   getAssignedComplaints,
   logoutUser,
-  updateComplaintStatus, // 👈 added
+  updateComplaintStatus,
 } from "../utils/api";
 
 function VolunteerAssignedTasks() {
@@ -15,7 +15,7 @@ function VolunteerAssignedTasks() {
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [loading, setLoading] = useState(true);
 
-  const statuses = ["All", "received", "in_review", "resolved"];
+  const statuses = ["All", "active", "assigned", "in_review", "resolved"];
 
   // ✅ Fetch volunteer profile & assigned complaints
   useEffect(() => {
@@ -50,22 +50,10 @@ function VolunteerAssignedTasks() {
     else setFilteredTasks(tasks.filter((t) => t.status === selectedStatus));
   }, [selectedStatus, tasks]);
 
+  // ✅ Logout
   const handleLogout = async () => {
     await logoutUser();
     navigate("/login");
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "received":
-        return "text-green-600";
-      case "in_review":
-        return "text-yellow-600";
-      case "resolved":
-        return "text-gray-600";
-      default:
-        return "text-gray-400";
-    }
   };
 
   const getCategoryColor = (category) => {
@@ -88,6 +76,19 @@ function VolunteerAssignedTasks() {
         return "bg-orange-100 text-orange-600";
       default:
         return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "resolved":
+        return "text-green-600 font-semibold";
+      case "in_review":
+        return "text-yellow-600 font-semibold";
+      case "assigned":
+        return "text-blue-600 font-semibold";
+      default:
+        return "text-gray-600 font-semibold";
     }
   };
 
@@ -239,7 +240,7 @@ function VolunteerAssignedTasks() {
                   </span>
                 </div>
 
-                {/* ✅ Status update + View Details buttons */}
+                {/* ✅ Status update + View Details */}
                 <div className="flex justify-between items-center mt-4">
                   <select
                     value={task.status}

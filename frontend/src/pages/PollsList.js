@@ -142,19 +142,6 @@ function PollsList() {
           <p className="text-xs text-gray-400">{user.location}</p>
         </div>
       </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-2">
-        <button
-          onClick={() => navigate("/complaints/:id/sentiment")}
-          className="w-full text-left px-4 py-2 rounded-md hover:bg-blue-50 font-medium text-blue-600 transition"
-        >
-          Results
-        </button>
-
-       
-      
-      </nav>
     </>
   )}
 </aside>

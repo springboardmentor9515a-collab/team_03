@@ -146,12 +146,6 @@ const handleVote = async () => {
           </p>
         )}
 
-        <button
-          onClick={() => navigate(`/polls/${id}/sentiment`)}
-          className="w-full mt-4 py-2 text-green-600 border border-green-600 font-semibold rounded-xl transition-all hover:bg-green-600 hover:text-white"
-        >
-          View Results
-        </button>
       </div>
     </div>
   );

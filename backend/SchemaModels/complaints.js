@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const statusValues = ['active', 'assigned', 'under_review', 'responded', 'closed'];
+const statusValues = ['active', 'assigned', 'in_review','resolved'];
 
 const statusHistorySchema = new mongoose.Schema({
   status: {

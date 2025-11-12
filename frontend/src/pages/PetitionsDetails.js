@@ -52,12 +52,6 @@ export default function PetitionDetails() {
       <div className="bg-white shadow-md rounded-2xl p-6 max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">{petition.title}</h2>
-          <button
-            onClick={() => navigate(`/complaints/${id}/sentiment`)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-          >
-            View Sentiment Results
-          </button>
         </div>
         <p className="text-gray-700 mb-4">{petition.description}</p>
 
